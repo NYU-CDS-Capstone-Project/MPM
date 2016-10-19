@@ -5,6 +5,9 @@ from scipy.stats import norm
 
 rng = np.random.RandomState(0)
 
+def safe_ln(x, minval=0.0000000001):
+    return np.log(x.clip(min=minval))
+
 def black_box(n_samples, theta=1.0, phi=0.2):
     """
     Black box for which we know the distribution follows normal
@@ -26,52 +29,54 @@ def log_likelihood(X, theta, phi):
     n_counts = n[bin_indices]
 
     P_X_given_theta = n_counts / np.sum(n_counts)
-    return np.sum(np.log(P_X_given_theta))
+    return np.sum(safe_ln(P_X_given_theta))
 
-def compute_posterior(thetas, phi, X, priors):
+def compute_posterior(thetas, phi, X, prior):
     """
     Compute P(theta | phi, X)
     """
-    posteriors = []
+    log_posterior = []
     
     for i in range(len(thetas)):
         # Find log(\prod_{i=1}^n P(X_i | t, phi)
         log_like = log_likelihood(X, thetas[i], phi)
+        log_prior = np.log(prior[i])
+        log_posterior.append(log_like + log_prior)
 
-        # Log-Prior:
-        # Assume P(theta | phi) is a gaussian with mean 1.0
-        # and std phi
-        prior = np.log(priors[i])
-        posteriors.append(log_like + prior)
+    posterior = np.array(np.exp(log_posterior))
+    normalize = np.sum(posterior)
+    return posterior / normalize
 
-    posteriors = np.array(posteriors)
-    normalize = np.sum(posteriors)
-    return np.sign(normalize) * posteriors / normalize
-
-def optimize_phi(posteriors, thetas):
-    # entropy of posteriors
-    best_entropy = np.sum(posteriors * np.exp(posteriors))
+def optimize_phi(posterior, thetas):
+    # entropy of posterior
+    best_entropy = np.sum(posterior * np.log(posterior))
 
     phis = np.linspace(0.5, 1.5, 20)
     inf_gain = []
-
+    best_phys = [] 
+    N_toys = 10
     for phi in phis:
-        posteriors = compute_posterior(thetas, phi, samples, posteriors)
-        curr_entropy = np.sum(posteriors * np.exp(posteriors))
-        inf_gain.append(best_entropy - curr_entropy)
-    return phis[np.argmax(inf_gain)]
+        for i in range(N_toys):
+            toy_data = black_box(1000, 1.0, phi)
+            posterior = compute_posterior(thetas, phi, toy_data, posterior)
+            curr_entropy = np.sum(posterior * np.log(posterior))
+            inf_gain.append(best_entropy - curr_entropy)
+            best_phys.append(phis[np.argmax(inf_gain)])
+    return np.mean(best_phys)
 
 
-phi = 0.1
-# generate a set of plausible thetas
-thetas = np.linspace(0.5, 1.5, 100)
+def do_real_experiments():
+    # generate a set of plausible thetas
+    phi = 0.1
+    thetas = np.linspace(0.5, 1.5, 100)
+    real_data =  black_box(1000, 1.0, phi)
+    # Prior:
+    # Assume P(theta | phi) is a gaussian with mean 1.0
+    # and std phi
+    prior = [norm.pdf(theta, 1.0, 1.0) for theta in thetas]
+    toy_posterior = compute_posterior(thetas, phi, real_data, prior)
+    best_phi = optimize_phi(toy_posterior, thetas)
+    return best_phis
 
-for i in range(10):
-    # generate the initial data sample (x_1, x_2, ..., x_1000)
-    samples = black_box(1000, 1.0, phi)
-
-    # Compute posterior.
-    priors = [norm.pdf(theta, 1.0, 1.0) for theta in thetas]
-    posterior = compute_posterior(thetas, phi, samples, priors)
-    phi = optimize_phi(posterior, thetas)
-    print(phi)
+best_phis = do_real_experiments()
+print best_phis
