@@ -8,7 +8,7 @@ rng = np.random.RandomState(0)
 def safe_ln(x, minval=0.0000000001):
     return np.log(x.clip(min=minval))
 
-def black_box(n_samples, theta=1.0, phi=0.2):
+def black_box(n_samples, theta=1.0, phi=0.2, random_state=None):
     """
     Black box for which we know the distribution follows normal
     with mean theta and std phi.
@@ -52,29 +52,34 @@ def optimize_phi(posterior, thetas):
     best_entropy = np.sum(posterior * np.log(posterior))
 
     phis = np.linspace(0.5, 1.5, 20)
-    inf_gain = []
+    mean_inf_gains = []
     best_phys = [] 
     N_toys = 10
     for phi in phis:
+        inf_gain = []
+
         for i in range(N_toys):
-            toy_data = black_box(1000, 1.0, phi)
+            print "optimize_phi " + str(i)
+            toy_data = black_box(1000, 1.0, phi, i)
             posterior = compute_posterior(thetas, phi, toy_data, posterior)
             curr_entropy = np.sum(posterior * np.log(posterior))
             inf_gain.append(best_entropy - curr_entropy)
             best_phys.append(phis[np.argmax(inf_gain)])
-    return np.mean(best_phys)
+        inf_gains.append(np.mean(inf_gain))
+    return phis[np.argmax(inf_gains)]
 
 
 def do_real_experiments():
     # generate a set of plausible thetas
     phi = 0.1
     thetas = np.linspace(0.5, 1.5, 100)
-    real_data =  black_box(1000, 1.0, phi)
+    real_data =  black_box(1000, 1.0, phi, 0)
     # Prior:
     # Assume P(theta | phi) is a gaussian with mean 1.0
     # and std phi
     prior = [norm.pdf(theta, 1.0, 1.0) for theta in thetas]
     toy_posterior = compute_posterior(thetas, phi, real_data, prior)
+    print "toy_posterior generated"
     best_phi = optimize_phi(toy_posterior, thetas)
     return best_phis
 
