@@ -16,6 +16,7 @@ def black_box(n_samples, theta=1.0, phi=0.2, random_state=None):
     rng = np.random.RandomState(random_state)
     return phi * rng.randn(n_samples) + theta
 
+
 def log_likelihood(X, theta, phi):
     """
     Gives likelihood of P(X )
@@ -32,7 +33,8 @@ def log_likelihood(X, theta, phi):
     plt.clf()
     return np.sum(safe_ln(P_X_given_theta))
 
-def compute_log_posterior(thetas, phi, X, prior):
+
+def compute_log_posterior(thetas, phi, X, prior, toy_iter="init", phi_iter="init"):
     """
     Compute P(theta | phi, X)
     """
@@ -47,35 +49,52 @@ def compute_log_posterior(thetas, phi, X, prior):
         log_posterior.append(log_like + log_prior[i])
         log_likelihoods.append(log_like)
 
-    # plt.plot(thetas, log_likelihoods)
-    # plt.show()
-    #
-    # plt.clf()
-    # plt.plot(thetas, log_posterior)
-    # plt.show()
+    plt.plot(thetas, log_likelihoods)
+    best_like_theta = thetas[np.argmax(log_likelihoods)]
+    title_string = (
+        "log_likelihood P(X | theta, phi=%0.2f), max at %0.2f, %s" %
+        (phi, best_like_theta, str(toy_iter)))
+    plt.title(title_string)
+    plt.xlabel("Thetas")
+    plt.ylabel("Log Likelihood")
+    plt.savefig("LL - Iteration, phi iter: %s, toy iter: %s" %
+                (str(phi_iter), str(toy_iter)))
+    plt.clf()
 
-    # print(log_likelihoods)
-    # print(thetas[np.argmax(log_posterior)])
+    plt.plot(thetas, log_posterior)
+    best_pos_theta = thetas[np.argmax(log_posterior)]
+    title_string = (
+        "log_posterior P(theta | X, phi=%0.2f), max at %0.2f, %s" %
+        (phi, best_pos_theta, str(toy_iter)))
+    plt.title(title_string)
+    plt.xlabel("Thetas")
+    plt.ylabel("Log Posterior")
+    plt.savefig("LP - Iteration, phi iter: %s, toy iter: %s" %
+                (str(phi_iter), str(toy_iter)))
+    plt.clf()
 
-    return log_posterior
+    return np.array(log_posterior)
 
-def optimize_phi(posterior, thetas):
+
+def optimize_phi(log_posterior, thetas):
     # entropy of posterior
-    best_entropy = np.sum(posterior * np.log(posterior))
+    best_entropy = np.sum(log_posterior)
 
     phis = np.linspace(0.5, 1.5, 20)
     mean_inf_gains = []
     best_phys = []
     N_toys = 10
-    for phi in phis:
+    for phi_iter, phi in enumerate(phis):
+        print("Phi Iter: %d" % phi_iter)
         inf_gain = []
 
         for i in range(N_toys):
             print("optimize_phi " + str(i))
-            theta_best = np.argmax(posterior)
+            theta_best = np.argmax(log_posterior)
             toy_data = black_box(1000, theta_best, phi, i)
-            posterior = compute_log_posterior(thetas, phi, toy_data, posterior)
-            curr_entropy = np.sum(posterior * np.log(posterior))
+            log_posterior = compute_log_posterior(
+                thetas, phi, toy_data, log_posterior, phi_iter, i)
+            curr_entropy = np.sum(log_posterior)
             inf_gain.append(best_entropy - curr_entropy)
             best_phys.append(phis[np.argmax(inf_gain)])
         inf_gains.append(np.mean(inf_gain))
@@ -100,10 +119,10 @@ def do_real_experiments():
     # and std 0.1
     prior = norm.pdf(thetas, 1.0, 0.1)
 
-    toy_posterior = compute_log_posterior(thetas, true_phi, real_data, prior)
+    log_posterior = compute_log_posterior(thetas, true_phi, real_data, prior)
 
     print("toy_posterior generated")
-    best_phi = optimize_phi(toy_posterior, thetas)
+    best_phi = optimize_phi(log_posterior, thetas)
     return best_phi
 
 best_phi = do_real_experiments()
