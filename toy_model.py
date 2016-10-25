@@ -13,6 +13,7 @@ def black_box(n_samples, theta=1.0, phi=0.2, random_state=None):
     Black box for which we know the distribution follows normal
     with mean theta and std phi.
     """
+    rng = np.random.RandomState(random_state)
     return phi * rng.randn(n_samples) + theta
 
 def log_likelihood(X, theta, phi):
@@ -35,15 +36,18 @@ def compute_posterior(thetas, phi, X, prior):
     Compute P(theta | phi, X)
     """
     log_posterior = []
-    
-    for i in range(len(thetas)):
+
+    for i, theta in enumerate(thetas):
         # Find log(\prod_{i=1}^n P(X_i | t, phi)
-        log_like = log_likelihood(X, thetas[i], phi)
-        print log_like
+        log_like = log_likelihood(X, theta, phi)
+        print(log_like)
         log_prior = np.log(prior[i])
         log_posterior.append(log_like + log_prior)
+    posterior = np.exp(log_posterior)
+    print(log_posterior)
+    print(posterior)
+    print(thetas[np.argmax(posterior)])
 
-    posterior = np.array(np.exp(log_posterior))
     normalize = np.sum(posterior)
     return posterior / normalize
 
@@ -53,13 +57,13 @@ def optimize_phi(posterior, thetas):
 
     phis = np.linspace(0.5, 1.5, 20)
     mean_inf_gains = []
-    best_phys = [] 
+    best_phys = []
     N_toys = 10
     for phi in phis:
         inf_gain = []
 
         for i in range(N_toys):
-            print "optimize_phi " + str(i)
+            print("optimize_phi " + str(i))
             theta_best = np.argmax(posterior)
             toy_data = black_box(1000, theta_best, phi, i)
             posterior = compute_posterior(thetas, phi, toy_data, posterior)
@@ -71,18 +75,28 @@ def optimize_phi(posterior, thetas):
 
 
 def do_real_experiments():
+    """
+    Estimate the true value of phi for an experiment.
+    """
+    true_phi = 0.1
+    true_theta = 1.0
+
     # generate a set of plausible thetas
-    phi = 0.1
     thetas = np.linspace(0.5, 1.5, 100)
-    real_data =  black_box(1000, 1.0, phi, 0)
+
+    # Generate 1000 samples from the black box.
+    real_data =  black_box(1000, true_theta, true_phi, 0)
+
     # Prior:
     # Assume P(theta | phi) is a gaussian with mean 1.0
-    # and std phi
-    prior = [norm.pdf(theta, 1.0, 1.0) for theta in thetas]
-    toy_posterior = compute_posterior(thetas, phi, real_data, prior)
-    print "toy_posterior generated"
-    best_phi = optimize_phi(toy_posterior, thetas)
-    return best_phis
+    # and std 0.1
+    prior = norm.pdf(thetas, 1.0, 0.1)
 
-best_phis = do_real_experiments()
-print best_phis
+    toy_posterior = compute_posterior(thetas, true_phi, real_data, prior)
+
+    print("toy_posterior generated")
+    # best_phi = optimize_phi(toy_posterior, thetas)
+    return best_phi
+
+best_phi = do_real_experiments()
+print(best_phi)
