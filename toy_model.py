@@ -20,14 +20,13 @@ def log_likelihood(X, theta, phi):
     Gives likelihood of P(X )
     """
     samples = black_box(10**6, theta, phi)
-    n, bins, _ = plt.hist(samples, 100)
+    n, bins, _ = plt.hist(samples, 100, normed = True)
     bin_indices = np.searchsorted(bins, X) - 1
 
     # Clip values outside the interval.
     bin_indices[bin_indices == -1] = 0
     bin_indices[bin_indices == len(n)] = len(n) - 1
     n_counts = n[bin_indices]
-
     P_X_given_theta = n_counts / np.sum(n_counts)
     return np.sum(safe_ln(P_X_given_theta))
 
@@ -40,6 +39,7 @@ def compute_posterior(thetas, phi, X, prior):
     for i in range(len(thetas)):
         # Find log(\prod_{i=1}^n P(X_i | t, phi)
         log_like = log_likelihood(X, thetas[i], phi)
+        print log_like
         log_prior = np.log(prior[i])
         log_posterior.append(log_like + log_prior)
 
@@ -60,7 +60,8 @@ def optimize_phi(posterior, thetas):
 
         for i in range(N_toys):
             print "optimize_phi " + str(i)
-            toy_data = black_box(1000, 1.0, phi, i)
+            theta_best = np.argmax(posterior)
+            toy_data = black_box(1000, theta_best, phi, i)
             posterior = compute_posterior(thetas, phi, toy_data, posterior)
             curr_entropy = np.sum(posterior * np.log(posterior))
             inf_gain.append(best_entropy - curr_entropy)
