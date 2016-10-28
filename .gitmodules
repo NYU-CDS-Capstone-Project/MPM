@@ -1,0 +1,3 @@
+[submodule "weinberg-exp"]
+	path = weinberg-exp
+	url = https://github.com/lukasheinrich/weinberg-exp.git
