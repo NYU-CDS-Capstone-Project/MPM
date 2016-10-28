@@ -1,0 +1,12 @@
+stages:
+  - name: madevent
+    dependencies: ['init']
+    scheduler:
+      scheduler_type: singlestep-stage
+      step: {$ref: 'steps.yml#/madgraph'}
+      parameters:
+        gridpack: {stages: init, output: gridpack}
+        nevents: {stages: init, output: nevents}
+        seed: {stages: init, output: seed}
+        lhefile: '{workdir}/lhefile.lhe'
+

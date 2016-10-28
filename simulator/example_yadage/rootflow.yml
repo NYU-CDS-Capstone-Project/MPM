@@ -1,0 +1,45 @@
+stages:
+  - name: prepare
+    scheduler:
+      scheduler_type: singlestep-stage
+      step: {$ref: 'weinbergsteps.yml#/prepare'}
+      parameters:
+        sqrtshalf: {stages: init, output: sqrtshalf, unwrap: true}
+        polbeam1: {stages: init, output: polbeam1, unwrap: true}
+        polbeam2: {stages: init, output: polbeam2, unwrap: true}
+        process: 'e+ e- > mu+ mu-'
+        runcardtempl: {stages: init, output: runcardtempl, unwrap: true}
+        outrun: '{workdir}/run_card.dat'
+        proccardtempl: {stages: init, output: proccardtempl, unwrap: true}
+        outproc: '{workdir}/proc_card.dat'
+  - name: grid
+    dependencies: ['prepare']
+    scheduler:
+      scheduler_type: singlestep-stage
+      step: {$ref: 'steps.yml#/grid'}
+      parameters:
+        paramcard: '/analysis/tests/param_card_defaultsm.dat'
+        proccard: {stages: prepare, output: proccard, unwrap: true}
+        runcard: {stages: prepare, output: runcard, unwrap: true}
+        gridpack: '{workdir}/gridpack.tar.gz'
+  - name: subchain
+    dependencies: ['grid']
+    scheduler:
+      scheduler_type: multistep-stage
+      workflow: {$ref: 'subchain.yml'}
+      parameters:
+        pythiacard: '/analysis/mainPythiaMLM.cmnd'
+        gridpack: {stages: grid, output: gridpack, unwrap: true}
+        nevents: {stages: init, output: nevents, unwrap: true}
+        seed: {stages: init, output: seeds, flatten: true}
+      scatter:
+        method: zip
+        parameters: ['seed']
+  - name: merge
+    dependencies: ['subchain']
+    scheduler:
+      scheduler_type: singlestep-stage
+      step: {$ref: 'weinbergsteps.yml#/jsonlines'}
+      parameters:
+        inputfiles: {stages: 'subchain.[*].madevent', output: lhefile}
+        outputfile: '{workdir}/out.jsonl'

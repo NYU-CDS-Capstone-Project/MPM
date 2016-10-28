@@ -1,0 +1,47 @@
+grid:
+  process:
+    process_type: 'string-interpolated-cmd'
+    cmd: './scripts/setupgrid.sh {paramcard} {proccard} {runcard} {gridpack}'
+  publisher:
+    publisher_type: 'frompar-pub'
+    outputmap:
+      gridpack: gridpack
+  environment:
+    environment_type: 'docker-encapsulated'
+    image: 'lukasheinrich/generic_madgraphpythiadelphes'
+
+madgraph:
+  process:
+    process_type: 'string-interpolated-cmd'
+    cmd: './scripts/rungrid.sh {gridpack} {nevents} {seed} {lhefile}'
+  publisher:
+    publisher_type: 'frompar-pub'
+    outputmap:
+      lhefile: lhefile
+  environment:
+    environment_type: 'docker-encapsulated'
+    image: 'lukasheinrich/generic_madgraphpythiadelphes'
+
+pythia:
+  process:
+    process_type: 'string-interpolated-cmd'
+    cmd: '/analysis/pythia_main/example_main {settings_file} {hepmcfile} {lhefile}'
+  publisher:
+    publisher_type: 'frompar-pub'
+    outputmap:
+      hepmcfile: hepmcfile
+  environment:
+    environment_type: 'docker-encapsulated'
+    image: 'lukasheinrich/generic_madgraphpythiadelphes'
+
+catmerge:
+  process:
+    process_type: 'string-interpolated-cmd'
+    cmd: 'cat {inputfiles} > {mergedfile}'
+  publisher:
+    publisher_type: 'frompar-pub'
+    outputmap:
+      lhefile: mergedfile
+  environment:
+    environment_type: 'docker-encapsulated'
+    image: 'lukasheinrich/generic_madgraphpythiadelphes'

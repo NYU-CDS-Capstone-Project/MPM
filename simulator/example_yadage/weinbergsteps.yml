@@ -1,0 +1,38 @@
+prepare:
+  process:
+    process_type: 'interpolated-script-cmd'
+    script: |
+      export __SQRTSHLF__={sqrtshalf}
+      export __POLBEAM1__={polbeam1}
+      export __POLBEAM2__={polbeam2}
+      envsubst < {runcardtempl} > {outrun}
+      __PROCESS__="{process}" envsubst < {proccardtempl} > {outproc}
+  environment:
+    environment_type: 'docker-encapsulated'
+    image: 'lukasheinrich/weinberganalysis'
+  publisher:
+    publisher_type: 'frompar-pub'
+    outputmap:
+      runcard: outrun
+      proccard: outproc
+jsonlines:
+  process:
+    process_type: 'interpolated-script-cmd'
+    interpreter: python
+    script: |
+      infiles='{inputfiles}'.split()
+      outfile='{outputfile}'
+      print 'infiles',infiles
+      import jsonlines
+      import pylhe
+      with jsonlines.open(outfile,'w') as writer:
+        for f in infiles:
+          for e in pylhe.readLHE(f):
+            writer.write(e)
+  environment:
+    environment_type: 'docker-encapsulated'
+    image: 'lukasheinrich/weinberganalysis'
+  publisher:
+    publisher_type: 'frompar-pub'
+    outputmap:
+      jsonlinesfile: outputfile
