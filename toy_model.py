@@ -19,10 +19,11 @@ def black_box(n_samples, theta=1.0, phi=0.2, random_state=None):
 
 def log_likelihood(X, theta, phi):
     """
-    Gives likelihood of P(X )
+    Gives likelihood of P(X | theta, phi)
     """
+    # Generate samples to estimate the empirical distribution.
     samples = black_box(10**6, theta, phi)
-    n, bins, _ = plt.hist(samples, 100, normed = True)
+    n, bins, _ = plt.hist(samples, 1000, normed=True)
     bin_indices = np.searchsorted(bins, X) - 1
 
     # Clip values outside the interval.
@@ -30,7 +31,6 @@ def log_likelihood(X, theta, phi):
     bin_indices[bin_indices == len(n)] = len(n) - 1
     n_counts = n[bin_indices]
     P_X_given_theta = n_counts / np.sum(n_counts)
-    plt.clf()
     return np.sum(safe_ln(P_X_given_theta))
 
 
