@@ -100,29 +100,31 @@ def optimize_phi(log_posterior, log_prior, thetas):
     return phis[np.argmax(inf_gains)]
 
 
-def do_real_experiments():
+def do_real_experiments(phi, theta, log_prior, thetas):
     """
     Estimate the true value of phi for an experiment.
     """
-    true_phi = 0.1
-    true_theta = 1.0
-
-    # generate a set of plausible thetas
-    thetas = np.linspace(0.5, 1.5, 100)
 
     # Generate 1000 samples from the black box.
-    real_data =  black_box(1000, true_theta, true_phi, 0)
+    real_data =  black_box(1000, theta, phi, 0)
 
     # Prior:
     # Assume P(theta | phi) is a gaussian with mean 1.0
     # and std 0.1
-    log_prior = np.log(norm.pdf(thetas, 1.0, 0.1))
 
-    log_posterior = compute_log_posterior(thetas, true_phi, real_data, log_prior)
+    log_posterior = compute_log_posterior(thetas, phi, real_data, log_prior)
 
     print("toy_posterior generated")
     best_phi = optimize_phi(log_posterior, log_prior, thetas)
-    return best_phi
+    return best_phi, log_posterior
 
-# best_phi = do_real_experiments()
-# print(best_phi)
+N_experiments = 5
+log_prior = np.log(norm.pdf(thetas, 1.0, 0.1))
+phi = 0.1
+theta = 1.0
+# generate a set of plausible thetas
+thetas = np.linspace(0.5, 1.5, 100)
+
+for i in range(N_experiments):
+    phi, log_posterior = do_real_experiments(phi, theta, log_prior, thetas)
+    theta = np.argmax(log_posterior)
