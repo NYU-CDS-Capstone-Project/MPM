@@ -20,6 +20,22 @@ def black_box(n_samples, theta=1.0, phi=0.2, random_state=None):
 def log_likelihood(X, theta, phi):
     """
     Gives likelihood of P(X | theta, phi)
+
+    Parameters
+    ----------
+    X - shape(n_samples,)
+        Samples drawn from the black box.
+
+    theta - float
+        Parameter value.
+
+    phi - float
+        Experimental setting.
+
+    Returns
+    -------
+    likelihood - float
+        \prod_{i=1}^n P(X_i | theta, phi)
     """
     # Generate samples to estimate the empirical distribution.
     samples = black_box(10**6, theta, phi)
@@ -36,7 +52,26 @@ def log_likelihood(X, theta, phi):
 
 def compute_log_posterior(thetas, phi, X, log_prior, toy_iter="init", phi_iter="init"):
     """
-    Compute P(theta | phi, X)
+    Compute P(theta | phi, X) = P(theta | phi) * P(X | theta, phi)
+
+    Parameters
+    ----------
+    thetas - shape=(n_thetas,)
+        List of permissible values of thetas.
+
+    phi - float
+        Experimental setting.
+
+    X - shape=(n_samples,)
+        Samples drawn from the black box.
+
+    log_prior - float
+        log(P(theta))
+
+    Returns
+    -------
+    log_posterior - shape=(n_thetas,)
+        Log posterior.
     """
     log_posterior = []
     log_likelihoods = []
@@ -76,6 +111,26 @@ def compute_log_posterior(thetas, phi, X, log_prior, toy_iter="init", phi_iter="
 
 
 def optimize_phi(log_posterior, log_prior, thetas):
+    """
+    Returns the value of phi that minimizes the entropy
+    of P(theta | X, phi)
+
+    Arguments
+    ---------
+    log_posterior - shape=(n_thetas,)
+        log(P(theta | X, phi))
+
+    log_prior - shape=(n_thetas,)
+        log(P(theta))
+
+    thetas - shape=(n_thetas,)
+        List of permissible values of thetas.
+
+    Returns
+    -------
+    phi - float
+        Optimal value of phi.
+    """
     # entropy of posterior
     best_entropy = np.sum(log_posterior)
 
@@ -102,15 +157,35 @@ def optimize_phi(log_posterior, log_prior, thetas):
 
 def do_real_experiments(phi, theta, log_prior, thetas):
     """
-    Estimate the true value of phi for an experiment.
+    Run a set of experiments to estimate the value of
+    the experimental settings corresponding to the least
+    entropy for the parameter that you would like to estimate.
+
+    Parameters
+    ----------
+    phi - float
+        Guess for the experimental settings.
+
+    theta - float
+        Estimate for the true value of theta.
+
+    log_prior - shape=(n_thetas,)
+        Log of the prior values on theta.
+
+    thetas - shape=(n_thetas,)
+        A list of possible values for the theta.
+
+    Returns
+    -------
+    phi - float
+        Experimental setting for the next experiment.
+
+    log_posterior - shape=(n_thetas,)
+        This will be the prior on thetas for the next experiment.
     """
 
     # Generate 1000 samples from the black box.
     real_data =  black_box(1000, theta, phi, 0)
-
-    # Prior:
-    # Assume P(theta | phi) is a gaussian with mean 1.0
-    # and std 0.1
 
     log_posterior = compute_log_posterior(thetas, phi, real_data, log_prior)
 
