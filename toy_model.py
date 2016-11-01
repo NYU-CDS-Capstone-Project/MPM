@@ -83,9 +83,9 @@ def compute_log_posterior(thetas, phi, X, log_prior, toy_iter="init", phi_iter="
         log_like = log_likelihood(X, theta, phi)
         log_likelihoods[i] = log_like
     
-    max_log_like = max(log_likelihoods)
-    log_likelihoods -= max_log_like
     log_posterior = log_likelihoods + log_prior
+    max_log_posterior = max(log_posterior)
+    log_posterior -= max_log_posterior
 
     posterior = np.exp(log_posterior)
     sum_posterior = np.sum(posterior)
@@ -95,8 +95,8 @@ def compute_log_posterior(thetas, phi, X, log_prior, toy_iter="init", phi_iter="
     plt.plot(thetas, log_likelihoods)
     best_like_theta = thetas[np.argmax(log_likelihoods)]
     title_string = (
-        "log_likelihood P(X | theta, phi=%0.2f), max at %0.2f, %s" %
-        (phi, best_like_theta, str(toy_iter)))
+        "log_likelihood P(X | theta, phi=%0.2f), max at %0.2f, toy iter: %s, phi_iter: %s" %
+        (phi, best_like_theta, str(toy_iter), str(phi_iter)))
     plt.title(title_string)
     plt.xlabel("Thetas")
     plt.ylabel("Log Likelihood")
@@ -143,25 +143,25 @@ def optimize_phi(log_posterior, log_prior, thetas):
     # entropy of posterior
     best_entropy = np.sum(log_posterior)
 
-    phis = np.linspace(0.5, 1.5, 20)
+    phis = [0.09, 0.1, 0.11] # np.linspace(-0.5, 0.5, 10)
     mean_inf_gains = []
     best_phys = []
-    N_toys = 10
+    N_toys = 2
     for phi_iter, phi in enumerate(phis):
         print("Phi Iter: %d" % phi_iter)
         inf_gain = []
 
-        for i in range(N_toys):
+        for i in range(2):
             print("optimize_phi " + str(i))
             theta_best = np.argmax(log_posterior)
             toy_data = black_box(1000, theta_best, phi, i)
             log_posterior = compute_log_posterior(
-                thetas, phi, toy_data, log_prior, phi_iter, i)
+                thetas, phi, toy_data, log_prior, i, phi_iter)
             curr_entropy = np.sum(log_posterior)
             inf_gain.append(best_entropy - curr_entropy)
             best_phys.append(phis[np.argmax(inf_gain)])
-        inf_gains.append(np.mean(inf_gain))
-    return phis[np.argmax(inf_gains)]
+        mean_inf_gains.append(np.mean(inf_gain))
+    return phis[np.argmax(mean_inf_gains)]
 
 
 def do_real_experiments(phi, theta, log_prior, thetas):
@@ -206,7 +206,7 @@ def do_real_experiments(phi, theta, log_prior, thetas):
 thetas = np.linspace(0.5, 1.5, 100)
 
 N_experiments = 5
-log_prior = np.log(norm.pdf(thetas, 1.0, 0.1))
+log_prior = np.log(np.ones_like(thetas) / 100.0)
 phi = 0.1
 theta = 1.0
 
