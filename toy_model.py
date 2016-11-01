@@ -38,16 +38,24 @@ def compute_log_posterior(thetas, phi, X, prior, toy_iter="init", phi_iter="init
     """
     Compute P(theta | phi, X)
     """
-    log_posterior = []
-    log_likelihoods = []
+    log_posterior = np.empty_like(thetas)
+    log_likelihoods = np.empty_like(thetas)
     log_prior = np.log(prior)
 
+    
     for i, theta in enumerate(thetas):
         # Find log(\prod_{i=1}^n P(X_i | t, phi)
         log_like = log_likelihood(X, theta, phi)
+        log_likelihoods[i] = log_like
+    
+    max_log_like = max(log_likelihoods)
+    log_likelihoods -= max_log_like
+    log_posterior = log_likelihoods + log_prior
 
-        log_posterior.append(log_like + log_prior[i])
-        log_likelihoods.append(log_like)
+    posterior = np.exp(log_posterior)
+    sum_posterior = np.sum(posterior)
+    norm_posterior = posterior / sum_posterior
+    log_posterior = np.log(norm_posterior)
 
     plt.plot(thetas, log_likelihoods)
     best_like_theta = thetas[np.argmax(log_likelihoods)]
@@ -68,7 +76,7 @@ def compute_log_posterior(thetas, phi, X, prior, toy_iter="init", phi_iter="init
         (phi, best_pos_theta, str(toy_iter)))
     plt.title(title_string)
     plt.xlabel("Thetas")
-    plt.ylabel("Log Posterior")
+    plt.ylabel("Log Posterior") 
     plt.savefig("LP - Iteration, phi iter: %s, toy iter: %s" %
                 (str(phi_iter), str(toy_iter)))
     plt.clf()
@@ -126,4 +134,4 @@ def do_real_experiments():
     return best_phi
 
 best_phi = do_real_experiments()
-print(best_phi)
+# print(best_phi)
