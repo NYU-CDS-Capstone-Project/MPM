@@ -126,12 +126,13 @@ def do_real_experiments(phi, theta, log_prior, thetas):
     best_phi = optimize_phi(log_posterior, log_prior, thetas)
     return best_phi, log_posterior
 
+# generate a set of plausible thetas
+thetas = np.linspace(0.5, 1.5, 100)
+
 N_experiments = 5
 log_prior = np.log(norm.pdf(thetas, 1.0, 0.1))
 phi = 0.1
 theta = 1.0
-# generate a set of plausible thetas
-thetas = np.linspace(0.5, 1.5, 100)
 
 for i in range(N_experiments):
     phi, log_posterior = do_real_experiments(phi, theta, log_prior, thetas)
