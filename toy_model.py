@@ -40,6 +40,7 @@ def log_likelihood(X, theta, phi):
     # Generate samples to estimate the empirical distribution.
     samples = black_box(10**6, theta, phi)
     n, bins, _ = plt.hist(samples, 1000, normed=True)
+    plt.clf()
     bin_indices = np.searchsorted(bins, X) - 1
 
     # Clip values outside the interval.
@@ -73,15 +74,23 @@ def compute_log_posterior(thetas, phi, X, log_prior, toy_iter="init", phi_iter="
     log_posterior - shape=(n_thetas,)
         Log posterior.
     """
-    log_posterior = []
-    log_likelihoods = []
+    log_posterior = np.empty_like(thetas)
+    log_likelihoods = np.empty_like(thetas)
 
+    
     for i, theta in enumerate(thetas):
         # Find log(\prod_{i=1}^n P(X_i | t, phi)
         log_like = log_likelihood(X, theta, phi)
+        log_likelihoods[i] = log_like
+    
+    max_log_like = max(log_likelihoods)
+    log_likelihoods -= max_log_like
+    log_posterior = log_likelihoods + log_prior
 
-        log_posterior.append(log_like + log_prior[i])
-        log_likelihoods.append(log_like)
+    posterior = np.exp(log_posterior)
+    sum_posterior = np.sum(posterior)
+    norm_posterior = posterior / sum_posterior
+    log_posterior = np.log(norm_posterior)
 
     plt.plot(thetas, log_likelihoods)
     best_like_theta = thetas[np.argmax(log_likelihoods)]
@@ -102,7 +111,7 @@ def compute_log_posterior(thetas, phi, X, log_prior, toy_iter="init", phi_iter="
         (phi, best_pos_theta, str(toy_iter)))
     plt.title(title_string)
     plt.xlabel("Thetas")
-    plt.ylabel("Log Posterior")
+    plt.ylabel("Log Posterior") 
     plt.savefig("LP - Iteration, phi iter: %s, toy iter: %s" %
                 (str(phi_iter), str(toy_iter)))
     plt.clf()
@@ -193,12 +202,13 @@ def do_real_experiments(phi, theta, log_prior, thetas):
     best_phi = optimize_phi(log_posterior, log_prior, thetas)
     return best_phi, log_posterior
 
+# generate a set of plausible thetas
+thetas = np.linspace(0.5, 1.5, 100)
+
 N_experiments = 5
 log_prior = np.log(norm.pdf(thetas, 1.0, 0.1))
 phi = 0.1
 theta = 1.0
-# generate a set of plausible thetas
-thetas = np.linspace(0.5, 1.5, 100)
 
 for i in range(N_experiments):
     phi, log_posterior = do_real_experiments(phi, theta, log_prior, thetas)
