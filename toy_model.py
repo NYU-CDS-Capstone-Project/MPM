@@ -34,13 +34,12 @@ def log_likelihood(X, theta, phi):
     return np.sum(safe_ln(P_X_given_theta))
 
 
-def compute_log_posterior(thetas, phi, X, prior, toy_iter="init", phi_iter="init"):
+def compute_log_posterior(thetas, phi, X, log_prior, toy_iter="init", phi_iter="init"):
     """
     Compute P(theta | phi, X)
     """
     log_posterior = np.empty_like(thetas)
     log_likelihoods = np.empty_like(thetas)
-    log_prior = np.log(prior)
 
     
     for i, theta in enumerate(thetas):
@@ -84,7 +83,7 @@ def compute_log_posterior(thetas, phi, X, prior, toy_iter="init", phi_iter="init
     return np.array(log_posterior)
 
 
-def optimize_phi(log_posterior, thetas):
+def optimize_phi(log_posterior, log_prior, thetas):
     # entropy of posterior
     best_entropy = np.sum(log_posterior)
 
@@ -101,7 +100,7 @@ def optimize_phi(log_posterior, thetas):
             theta_best = np.argmax(log_posterior)
             toy_data = black_box(1000, theta_best, phi, i)
             log_posterior = compute_log_posterior(
-                thetas, phi, toy_data, log_posterior, phi_iter, i)
+                thetas, phi, toy_data, log_prior, phi_iter, i)
             curr_entropy = np.sum(log_posterior)
             inf_gain.append(best_entropy - curr_entropy)
             best_phys.append(phis[np.argmax(inf_gain)])
@@ -109,29 +108,31 @@ def optimize_phi(log_posterior, thetas):
     return phis[np.argmax(inf_gains)]
 
 
-def do_real_experiments():
+def do_real_experiments(phi, theta, log_prior, thetas):
     """
     Estimate the true value of phi for an experiment.
     """
-    true_phi = 0.1
-    true_theta = 1.0
-
-    # generate a set of plausible thetas
-    thetas = np.linspace(0.5, 1.5, 100)
 
     # Generate 1000 samples from the black box.
-    real_data =  black_box(1000, true_theta, true_phi, 0)
+    real_data =  black_box(1000, theta, phi, 0)
 
     # Prior:
     # Assume P(theta | phi) is a gaussian with mean 1.0
     # and std 0.1
-    prior = norm.pdf(thetas, 1.0, 0.1)
 
-    log_posterior = compute_log_posterior(thetas, true_phi, real_data, prior)
+    log_posterior = compute_log_posterior(thetas, phi, real_data, log_prior)
 
     print("toy_posterior generated")
-    best_phi = optimize_phi(log_posterior, thetas)
-    return best_phi
+    best_phi = optimize_phi(log_posterior, log_prior, thetas)
+    return best_phi, log_posterior
 
-best_phi = do_real_experiments()
-# print(best_phi)
+N_experiments = 5
+log_prior = np.log(norm.pdf(thetas, 1.0, 0.1))
+phi = 0.1
+theta = 1.0
+# generate a set of plausible thetas
+thetas = np.linspace(0.5, 1.5, 100)
+
+for i in range(N_experiments):
+    phi, log_posterior = do_real_experiments(phi, theta, log_prior, thetas)
+    theta = np.argmax(log_posterior)
