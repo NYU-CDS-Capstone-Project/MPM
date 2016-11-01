@@ -24,6 +24,7 @@ def log_likelihood(X, theta, phi):
     # Generate samples to estimate the empirical distribution.
     samples = black_box(10**6, theta, phi)
     n, bins, _ = plt.hist(samples, 1000, normed=True)
+    plt.clf()
     bin_indices = np.searchsorted(bins, X) - 1
 
     # Clip values outside the interval.
