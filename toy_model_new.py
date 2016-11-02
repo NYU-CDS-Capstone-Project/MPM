@@ -1,11 +1,5 @@
 import numpy as np
 
-def entropy(p_thetas):
-    entropies = np.zeros_like(p_thetas)
-    mask = p_thetas > 0
-    entropies[mask] = p_thetas[mask] * np.log(p_thetas[mask])
-    return -np.sum(entropies)
-
 def safe_ln(x, minval=0.0000000001):
     return np.log(x.clip(min=minval))
 
@@ -22,6 +16,10 @@ def empirical_pdf(theta, phi):
     return np.histogram(samples, 1000, density=True)
 
 def likelihood(X, empirical_pdf):
+    """
+    Returns P(X_i) given a tuple of n, bins as returned from
+    np.histogram
+    """
     n, bins = empirical_pdf
     # Generate samples to estimate the empirical distribution.
     bin_indices = np.searchsorted(bins, X) - 1
@@ -34,12 +32,26 @@ def likelihood(X, empirical_pdf):
 
 
 def expected_information_gain(thetas, X, phi, prior=None):
+    """
+    Calculates E(-H(P(theta | X, phi))) where
+    each X_i is drawn iid from P(X | phi)
+
+    P(theta | X_i, phi) is estimated by P(X_i | theta, phi) * prior
+
+    Arguments
+    ---------
+    thetas - A set of plausible thetas.
+
+    X - Data generated from P(X | phi)
+
+    phi - Experimental setting
+
+    prior - P(theta | phi)
+    """
     if prior is None:
         prior = np.ones_like(thetas) / float(len(thetas))
 
     posteriors = np.zeros_like(thetas)
-    log_likelihoods = np.zeros_like(thetas)
-
     posteriors = np.zeros((len(thetas), len(X)))
     for theta_ind, theta in enumerate(thetas):
         emp_pdf = empirical_pdf(theta, phi)
@@ -49,22 +61,31 @@ def expected_information_gain(thetas, X, phi, prior=None):
     log_posterior = safe_ln(posteriors)
     p_log_p = posteriors * log_posterior
 
+    # Sum across thetas to get P(theta | X_i, phi)
+    # Take average across X_i's to get expected information gain.
     entropies = np.sum(p_log_p, axis=0)
     return np.mean(entropies)
 
 
-def optimize_phi(phis):
+def optimize_phi(phis, return_inf=False):
+    """
+    Find the phi with maximum expected information gain.
+    """
     phis = np.array(phis)
     rng = np.random.RandomState(0)
+
+    # XXX: Use more intelligent step size.
     thetas = np.linspace(0.8, 1.2, 100)
 
     eigs = []
     for phi in phis:
         # Draw n_samples from P(X | phi)
-        # We don't know theta so
-        # Draw n_thetas using a given prior:
-        # Draw n_samples from P(X | theta_i, phi)
-        # Average across theta_i's.
+
+        # Procedure:
+        # 1. Draw n_thetas using a given prior:
+        # 2. For each theta:
+        #    Draw n_samples from P(X | theta_i, phi) from the black box.
+        # 3. Average across theta_i's.
 
         # Assume uniform prior for now.
         # Draw 100 thetas
@@ -79,4 +100,7 @@ def optimize_phi(phis):
 
         eig = expected_information_gain(thetas, data, phi)
         eigs.append(eig)
-    return phis[np.argmax(eigs)]
+    best_phi = phis[np.argmax(eigs)]
+    if return_inf:
+        return best_phi, eigs
+    return best_phi
