@@ -32,6 +32,7 @@ def likelihood(X, empirical_pdf):
     P_X_given_theta = n[bin_indices]
     return P_X_given_theta
 
+
 def expected_information_gain(thetas, X, phi, prior=None):
     if prior is None:
         prior = np.ones_like(thetas) / float(len(thetas))
@@ -50,3 +51,32 @@ def expected_information_gain(thetas, X, phi, prior=None):
 
     entropies = np.sum(p_log_p, axis=0)
     return np.mean(entropies)
+
+
+def optimize_phi(phis):
+    phis = np.array(phis)
+    rng = np.random.RandomState(0)
+    thetas = np.linspace(0.8, 1.2, 100)
+
+    eigs = []
+    for phi in phis:
+        # Draw n_samples from P(X | phi)
+        # We don't know theta so
+        # Draw n_thetas using a given prior:
+        # Draw n_samples from P(X | theta_i, phi)
+        # Average across theta_i's.
+
+        # Assume uniform prior for now.
+        # Draw 100 thetas
+        n_samples = np.zeros((100, 1000))
+        pick_thetas = thetas[rng.randint(0, len(thetas), len(thetas))]
+        for theta_ind, theta in enumerate(pick_thetas):
+            n_samples[theta_ind] = black_box(1000, theta, phi, theta_ind)
+
+        # Average samples across thetas
+        # Equivalent to drawing from P(X | phi)
+        data = n_samples.mean(axis=0)
+
+        eig = expected_information_gain(thetas, data, phi)
+        eigs.append(eig)
+    return phis[np.argmax(eigs)]
