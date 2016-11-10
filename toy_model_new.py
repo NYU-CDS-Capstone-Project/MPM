@@ -12,8 +12,8 @@ def black_box(n_samples, theta=1.0, phi=0.2, random_state=None):
     return phi * rng.randn(n_samples) + theta
 
 def empirical_pdf(theta, phi):
-    samples = black_box(10**6, theta, phi)
-    return np.histogram(samples, 1000, density=True)
+    samples = black_box(10**4, theta, phi)
+    return np.histogram(samples, 100, density=True)
 
 def likelihood(X, empirical_pdf):
     """

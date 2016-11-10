@@ -21,11 +21,13 @@ def test_optimize_phi():
 
 #test_optimize_phi()
 
-phis = np.array([0.01, 0.1, 0.3 ,0.5, 1.0])
+phis = np.logspace(-2, 0, 10)
 best_phi, eigs = optimize_phi(phis, return_inf=True)
 objects = ["%.2f" % x for x in phis]
 y_pos = np.arange(len(objects))
 eigs = [ -x for x in eigs]
+
+plt.figure(figsize=(10,5))
 plt.bar(y_pos, eigs, align='center', alpha=0.5)
 plt.xticks(y_pos, objects)
 plt.xlabel('Phi')
