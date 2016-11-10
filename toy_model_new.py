@@ -11,9 +11,9 @@ def black_box(n_samples, theta=1.0, phi=0.2, random_state=None):
     rng = np.random.RandomState(random_state)
     return phi * rng.randn(n_samples) + theta
 
-def empirical_pdf(theta, phi):
-    samples = black_box(10**4, theta, phi)
-    return np.histogram(samples, 100, density=True)
+def empirical_pdf(theta, phi, bins=1000):
+    samples = black_box(10**6, theta, phi)
+    return np.histogram(samples, bins, density=True)
 
 def likelihood(X, empirical_pdf):
     """
@@ -42,7 +42,7 @@ def expected_information_gain(thetas, X, phi, prior=None):
     ---------
     thetas - A set of plausible thetas.
 
-    X - Data generated from P(X | phi)
+    X - P(X | phi)
 
     phi - Experimental setting
 
@@ -74,7 +74,8 @@ def optimize_phi(phis, return_inf=False):
     rng = np.random.RandomState(0)
 
     # XXX: Use more intelligent step size.
-    thetas = np.linspace(0.8, 1.2, 100)
+    n_thetas = 100
+    thetas = np.linspace(0.8, 1.2, n_thetas)
 
     eigs = []
     for phi in phis:
@@ -88,17 +89,22 @@ def optimize_phi(phis, return_inf=False):
 
         # Assume uniform prior for now.
         # Draw 100 thetas
-        n_samples = np.zeros((100, 1000))
         pick_thetas = thetas[rng.randint(0, len(thetas), len(thetas))]
+
+        # Heuristic fixed bins to compute the empirical pdf given theta and phi.
+        bins = np.linspace(-5.0, 5.0, 100)
+        bin_width = (bins[1] - bins[0]) / 2.0
+        X_s = (bins + bin_width)[:-1]
+
+        P_X_given_theta_phi = np.zeros((n_thetas, len(bins) - 1))
         for theta_ind, theta in enumerate(pick_thetas):
-            # call the black box for each theta, request 1000 samples,
+            # compute empirical P(X | theta, phi) for each theta, request 1000 samples,
             # store the samples for that theta in a row of the n_sample matrix
-            n_samples[theta_ind] = black_box(1000, theta, phi, theta_ind)
+            P_X_given_theta_phi[theta_ind] = empirical_pdf(theta, phi, bins)[0]
 
-        # Average samples across thetas
-        # Equivalent to drawing from P(X | phi)
-        data = n_samples.mean(axis=0)
-
+        P_X_given_phi = np.mean(P_X_given_theta_phi, axis=0)
+        P_X_given_phi /= np.sum(P_X_given_phi)
+        data = np.repeat(X_s, rng.multinomial(10000, P_X_given_phi, size=1)[0])
         eig = expected_information_gain(thetas, data, phi)
         eigs.append(eig)
     best_phi = phis[np.argmax(eigs)]
