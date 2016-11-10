@@ -22,7 +22,7 @@ For our problem the information gain is defined as:
 \begin{equation}\label{infGain}
 EIG(\Phi) =\int P(x|\Phi)\Big[ H[P(\theta)-H[P(\theta|x,\Phi)]\Big]dx
 \end{equation}
-to compute that we need $ P(x|\Phi)$ and $P(\theta|x,\Phi)$.
+to compute that we need to sample from $ P(x|\Phi)$ and know $P(\theta|x,\Phi)$.
 \begin{itemize}
 \item We don't have $P(x|\Phi)$ because the data of the experiment is conditioned on $\theta$ as well, consequently we can only sample from the distribution $P(x |\theta,\Phi)$. But we can calculate it using the following:
 \begin{equation}
@@ -46,11 +46,19 @@ We use the black box to generate the distributions $P(x |\theta_i,\Phi) $ for $n
 \end{equation}
 each of these distribution is obtained from a histogram of the sampled data.
 Using these we can compute $P(x|\Phi)$. \\
-\item To calculate $P(\theta|x,\Phi)$ we can use Bayes theorem:
+
+Since $P(x | \Phi)$ is now discretized because of the histogram, we sample from a multinomial with the parameters, $x_i$'s given by the bin centers and the probability computed from the normalized histogram.
+
+This is done from lines 92 to 107 in the code.
+
+\item To calculate the posterior $P(\theta|x_j,\Phi)$ where $x_j$ is sampled using the method described above, we can use Bayes theorem:
 \begin{equation}
-P(\theta|x,\Phi)=\frac{P(x|\theta,\Phi)P(\theta|\Phi)}{P(x|\Phi)}
+P(\theta|x_j,\Phi)=\frac{P(x_j|\theta,\Phi)P(\theta|\Phi)}{P(x_j|\Phi)}
 \end{equation}
+
+\item After doing this, we average out $-H[P(\theta|x_j ,\Phi)]$ across all $x_j$'s to calculate the Expected Information Gain.
 \end{itemize}
+
 
 \end{document}
 
