@@ -1,0 +1,57 @@
+\documentclass{article}
+\usepackage{graphicx}
+
+\begin{document}
+
+
+%\author{
+  %Michele Cer\'u
+  %\thanks{Use footnote for providing further
+    %information about author (webpage, alternative
+    %address)---\emph{not} for acknowledging funding agencies.} 
+    %\\
+ % Department of Computer Science\\
+  %Cranberry-Lemon University\\
+  %Pittsburgh, PA 15213 \\
+%  \texttt{mc3784@nyu.edu} \\
+%}
+
+\section{Information gain calculation: }
+% Obtain the information gain:
+For our problem the information gain is defined as:
+\begin{equation}\label{infGain}
+EIG(\Phi) =\int P(x|\Phi)\Big[ H[P(\theta)-H[P(\theta|x,\Phi)]\Big]dx
+\end{equation}
+to compute that we need $ P(x|\Phi)$ and $P(\theta|x,\Phi)$.
+\begin{itemize}
+\item We don't have $P(x|\Phi)$ because the data of the experiment is conditioned on $\theta$ as well, consequently we can only sample from the distribution $P(x |\theta,\Phi)$. But we can calculate it using the following:
+\begin{equation}
+P(x|\Phi) = \int P(x,\theta | \Phi)d \theta = 
+\int P(x| \theta , \Phi) P(\theta | \Phi)d \theta = E[P(x| \theta , \Phi)]
+\end{equation}
+Where the last equality is the expected value of $P(x| \theta , \Phi)$ under the distribution $P(\theta | \Phi)$.
+Discretising the integral:
+\begin{equation}
+P(x|\Phi) = \sum_{i=1}^{n}  P(x |\theta_i,\Phi)P(\theta_i | \Phi) = \frac{1}{n} \sum_{i=1}^{n}  P(x |\theta_i,\Phi) 
+\end{equation}
+Where in the last equality we are assuming to have an uniform distribution $P(\theta_i | \Phi) =1/n$.
+We use the black box to generate the distributions $P(x |\theta_i,\Phi) $ for $n$ values of $\theta$:
+\begin{equation}
+\begin{array}{ll}
+\theta_1 \rightarrow P(x |\theta_1,\Phi)\\
+\theta_2 \rightarrow P(x |\theta_2,\Phi)\\
+\dots\\
+\theta_n \rightarrow P(x |\theta_n,\Phi)\\
+\end{array}
+\end{equation}
+each of these distribution is obtained from a histogram of the sampled data.
+Using these we can compute $P(x|\Phi)$. \\
+\item To calculate $P(\theta|x,\Phi)$ we can use Bayes theorem:
+\begin{equation}
+P(\theta|x,\Phi)=\frac{P(x|\theta,\Phi)P(\theta|\Phi)}{P(x|\Phi)}
+\end{equation}
+\end{itemize}
+
+\end{document}
+
+
