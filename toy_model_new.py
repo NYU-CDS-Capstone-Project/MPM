@@ -51,10 +51,9 @@ def expected_information_gain(thetas, X, phi, prior=None):
     if prior is None:
         prior = np.ones_like(thetas) / float(len(thetas))
 
-    posteriors = np.zeros_like(thetas)
     posteriors = np.zeros((len(thetas), len(X)))
     for theta_ind, theta in enumerate(thetas):
-        emp_pdf = empirical_pdf(theta, phi)
+        emp_pdf = empirical_pdf(theta, phi) # here we do 1MM blackbox samples
         posteriors[theta_ind] = likelihood(X, emp_pdf) * prior[theta_ind]
 
     posteriors = posteriors / posteriors.sum(axis=0)
@@ -92,6 +91,8 @@ def optimize_phi(phis, return_inf=False):
         n_samples = np.zeros((100, 1000))
         pick_thetas = thetas[rng.randint(0, len(thetas), len(thetas))]
         for theta_ind, theta in enumerate(pick_thetas):
+            # call the black box for each theta, request 1000 samples,
+            # store the samples for that theta in a row of the n_sample matrix
             n_samples[theta_ind] = black_box(1000, theta, phi, theta_ind)
 
         # Average samples across thetas
