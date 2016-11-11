@@ -13,7 +13,13 @@ def black_box(n_samples, theta=1.0, phi=0.2, random_state=None):
 
 def empirical_pdf(theta, phi, bins=1000):
     samples = black_box(10**6, theta, phi)
-    return np.histogram(samples, bins, density=True)
+    n, bins = np.histogram(samples, bins, density=True)
+    bin_width = bins[1] - bins[0]
+
+    # Normalize to have probablity 1.0s
+    n *= bin_width
+    return n, bins
+
 
 def likelihood(X, empirical_pdf):
     """
