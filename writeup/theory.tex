@@ -17,12 +17,17 @@
 %}
 
 \section{Information gain calculation: }
-% Obtain the information gain:
-For our problem the information gain is defined as:
+We indicate with $x$ the data that is the output of the experiment. This output depends on $\theta$ (that represent a constant of nature) and $\Phi$ (that represent the setting to the experiment). We call $P(x|\theta,\Phi)$ the probability distribution of the data given $\theta$ and $\Phi$.\\
+The information gain for this distribution is defined as: 
 \begin{equation}\label{infGain}
-EIG(\Phi) =\int P(x|\Phi)\Big[ H[P(\theta)-H[P(\theta|x,\Phi)]\Big]dx
+EIG(\Phi) =\int P(x|\Phi)\Big[ H[P(\theta)]-H[P(\theta|x,\Phi)]\Big]dx
 \end{equation}
-to compute that we need to sample from $ P(x|\Phi)$ and know $P(\theta|x,\Phi)$.
+where we indicated with $H$ the entropy, that for a discrete distribution is defined as:
+\begin{equation}
+%H[P(\theta)]=-\int_{-\infty}^{\infty}p(\theta)\log p(\theta) d\theta
+H[P]=-\sum_{k\geq 1}p_k \log{p_k}
+\end{equation}
+To compute that we need to sample from $ P(x|\Phi)$ and know $P(\theta|x,\Phi)$.
 \begin{itemize}
 \item We don't have $P(x|\Phi)$ because the data of the experiment is conditioned on $\theta$ as well, consequently we can only sample from the distribution $P(x |\theta,\Phi)$. But we can calculate it using the following:
 \begin{equation}
