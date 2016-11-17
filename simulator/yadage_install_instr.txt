@@ -1,0 +1,12 @@
+sudo apt-get update
+
+sudo apt-get install graphviz libgraphviz-dev pkg-config
+pip install pygraphviz
+
+sudo apt-get install autoconf automake build-essential libtool python-dev
+pip install jq
+
+sudo apt-get install build-essential libssl-dev libffi-dev python-dev
+pip install cryptography
+
+pip install yadage
