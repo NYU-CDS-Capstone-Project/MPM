@@ -37,7 +37,7 @@ def likelihood(X, empirical_pdf):
     return P_X_given_theta
 
 
-def expected_information_gain(thetas, X, phi, prior=None):
+def expected_information_gain(thetas, X, phi, prior=None, return_posteriors=False):
     """
     Calculates E(-H(P(theta | X, phi))) where
     each X_i is drawn iid from P(X | phi)
@@ -72,7 +72,7 @@ def expected_information_gain(thetas, X, phi, prior=None):
     return np.mean(entropies)
 
 
-def optimize_phi(phis, return_inf=False):
+def optimize_phi(phis, return_likelihoods=False):
     """
     Find the phi with maximum expected information gain.
     """
@@ -81,9 +81,11 @@ def optimize_phi(phis, return_inf=False):
 
     # XXX: Use more intelligent step size.
     n_thetas = 100
-    thetas = np.linspace(0.8, 1.2, n_thetas)
+    thetas = np.linspace(0.0, 3.0, n_thetas)
 
     eigs = []
+    likelihoods_phi = []
+    thetas_phi = []
     for phi in phis:
         # Draw n_samples from P(X | phi)
 
@@ -99,7 +101,7 @@ def optimize_phi(phis, return_inf=False):
 
         # Set bins to a reasonable range to compute the empirical pdf
         # of X given theta and phi.
-        bins = np.linspace(-5.0, 5.0, 100)
+        bins = np.linspace(-3.0, 6.0, 100)
         bin_width = (bins[1] - bins[0]) / 2.0
         X_s = (bins + bin_width)[:-1]
 
@@ -107,6 +109,8 @@ def optimize_phi(phis, return_inf=False):
         for theta_ind, theta in enumerate(pick_thetas):
             # compute empirical P(X | theta, phi) for these bins
             P_X_given_theta_phi[theta_ind] = empirical_pdf(theta, phi, bins)[0]
+        likelihoods_phi.append(P_X_given_theta_phi)
+        thetas_phi.append(pick_thetas)
 
         # Compute P(X | phi) by averaging out P(X, theta | phi) across the
         # sampled values of theta.
@@ -119,6 +123,6 @@ def optimize_phi(phis, return_inf=False):
         eig = expected_information_gain(thetas, data, phi)
         eigs.append(eig)
     best_phi = phis[np.argmax(eigs)]
-    if return_inf:
-        return best_phi, eigs
-    return best_phi
+    if return_likelihoods:
+        return eigs, np.array(likelihoods_phi), np.array(thetas_phi)
+    return eigs
