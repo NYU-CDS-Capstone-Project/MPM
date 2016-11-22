@@ -51,7 +51,7 @@ def log_likelihood(X, theta, phi):
     return np.sum(safe_ln(P_X_given_theta))
 
 
-def compute_log_posterior(thetas, phi, X, log_prior, toy_iter="init", phi_iter="init"):
+def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="init", exp_iter="init"):
     """
     Compute P(theta | phi, X) = P(theta | phi) * P(X | theta, phi)
 
@@ -94,25 +94,25 @@ def compute_log_posterior(thetas, phi, X, log_prior, toy_iter="init", phi_iter="
     plt.plot(thetas, log_likelihoods)
     best_like_theta = thetas[np.argmax(log_likelihoods)]
     title_string = (
-        "log_likelihood P(X | theta, phi=%0.2f), max at %0.2f, toy iter: %s, phi_iter: %s" %
-        (phi, best_like_theta, str(toy_iter), str(phi_iter)))
+        "log_P(X|theta,phi=%0.2f), max at %0.2f, run_iter: %s, phi_iter: %s, exp_iter: %s" %
+        (phi, best_like_theta, str(run_iter), str(phi_iter), str(exp_iter)))
     plt.title(title_string)
     plt.xlabel("Thetas")
     plt.ylabel("Log Likelihood")
-    plt.savefig("LL - Iteration, phi iter: %s, toy iter: %s" %
-                (str(phi_iter), str(toy_iter)))
+    fig_name = "plots/%s/%s/LL - Iteration, phi_iter: %s" %(str(run_iter),str(exp_iter),str(phi_iter))
+    plt.savefig(str(fig_name))
     plt.clf()
 
     plt.plot(thetas, log_posterior)
     best_pos_theta = thetas[np.argmax(log_posterior)]
     title_string = (
-        "log_posterior P(theta | X, phi=%0.2f), max at %0.2f, %s" %
-        (phi, best_pos_theta, str(toy_iter)))
+        "log_P(theta | X, phi=%0.2f), max at %0.2f,run_iter: %s,exp_iter: %s" %
+        (phi, best_pos_theta,str(run_iter),str(exp_iter)))
     plt.title(title_string)
     plt.xlabel("Thetas")
     plt.ylabel("Log Posterior")
-    plt.savefig("LP - Iteration, phi iter: %s, toy iter: %s" %
-                (str(phi_iter), str(toy_iter)))
+    fig_name = "plots/%s/%s/LP - Iteration, phi iter: %s" %(str(run_iter),str(exp_iter),str(phi_iter))
+    plt.savefig(str(fig_name))
     plt.clf()
 
     return np.array(log_posterior)
@@ -121,7 +121,7 @@ def compute_log_posterior(thetas, phi, X, log_prior, toy_iter="init", phi_iter="
 N_experiments = 5
 
 # plausible experimental settings.
-phis = np.array([0.09, 0.1, 0.11])
+phis = np.linspace(-0.5, 0.5, 10) #np.array([0.09, 0.1, 0.11])
 
 # plausible parameter range.
 thetas = np.linspace(0.5, 1.5, 100)
@@ -135,7 +135,7 @@ theta_true = 1.0
 for i in range(10):
     # Generate data for the MAP estimate of theta.
     real_data = black_box(100000, theta_true, phi_real, i)
-    log_posterior = compute_log_posterior(thetas, phi_real, real_data, log_prior)
+    log_posterior = compute_log_posterior(thetas, phi_real, real_data, log_prior,i)
 
     # XXX: There seems to be some floating-point issues here. Is there
     # anything that we can do about it?
@@ -152,12 +152,12 @@ for i in range(10):
         curr_log_posterior = []
         # These experiments are to average out randomness in computing the
         # information gain.
-        for i in range(N_experiments):
+        for n in range(N_experiments):
 
             # Compute p(theta | D_fake, phi)
             toy_data = black_box(10000, theta_map, phi)
             log_posterior = compute_log_posterior(
-                thetas, phi_real, toy_data, log_prior)
+                thetas, phi_real, toy_data, log_prior,i,phi_ind,n)
             curr_log_posterior.append(log_posterior)
             curr_entropy = -np.sum(log_posterior * np.exp(log_posterior))
             curr_eig += best_entropy - curr_entropy
