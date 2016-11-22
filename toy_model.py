@@ -84,15 +84,22 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
         log_likelihoods[i] = log_like
 
     log_posterior = log_likelihoods + log_prior
-    max_log_posterior = max(log_posterior)
-    log_posterior -= max_log_posterior
 
-    posterior = np.exp(log_posterior)
-    sum_posterior = np.sum(posterior)
-    norm_posterior = posterior / sum_posterior
-    log_posterior = safe_ln(norm_posterior)
+    max_log_likelihood = max(log_likelihoods)
+    log_likelihoods -= max_log_likelihood
+    likelihood = np.exp(log_likelihoods)
+    likelihood = likelihood / np.sum(likelihood)
 
-    plt.plot(thetas, log_likelihoods)
+    max_log_prior = max(log_prior)
+    log_prior -= max_log_prior
+    prior = np.exp(max_log_prior)
+    prior = prior / np.sum(prior)
+
+    product = prior * likelihood
+    posterior =  product / np.sum(product)
+    log_posterior = np.log(posterior)
+
+    plt.plot(thetas, likelihood)
     best_like_theta = thetas[np.argmax(log_likelihoods)]
     title_string = (
         "log_P(X|theta,phi=%0.2f), max at %0.2f, run_iter: %s, phi_iter: %s, exp_iter: %s" %
@@ -104,7 +111,7 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
     plt.savefig(str(fig_name))
     plt.clf()
 
-    plt.plot(thetas, log_posterior)
+    plt.plot(thetas, posterior)
     best_pos_theta = thetas[np.argmax(log_posterior)]
     title_string = (
         "log_P(theta | X, phi=%0.2f), max at %0.2f,run_iter: %s,exp_iter: %s" %
@@ -116,7 +123,7 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
     plt.savefig(str(fig_name))
     plt.clf()
 
-    return np.array(log_posterior)
+    return log_posterior
 
 
 N_experiments = 5
@@ -171,4 +178,3 @@ for i in range(10):
     # log posterior.
     best_eig_ind = np.argmax(phi_eigs)
     phi_real = phis[best_eig_ind]
-    
