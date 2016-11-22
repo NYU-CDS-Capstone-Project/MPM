@@ -13,6 +13,7 @@ def black_box(n_samples, theta=1.0, phi=0.2, random_state=None):
     Black box for which we know the distribution follows normal
     with mean theta and std phi.
     """
+    phi = 2 + np.cos(phi)
     rng = np.random.RandomState(random_state)
     return phi * rng.randn(n_samples) + theta
 
@@ -121,21 +122,22 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
 N_experiments = 5
 
 # plausible experimental settings.
-phis = np.linspace(-0.5, 0.5, 10) #np.array([0.09, 0.1, 0.11])
+phis = np.linspace(0, 3.14, 10) #np.array([0.09, 0.1, 0.11])
 
 # plausible parameter range.
-thetas = np.linspace(0.5, 1.5, 100)
+thetas = np.linspace(0.4, 1.6, 100)
 
 # Initialize a uniform prior on theta, a plausible theta true and phi value.
-log_prior = safe_ln(np.ones_like(thetas) / 100.0)
+log_prior = safe_ln(np.ones_like(thetas) / thetas.shape[0])
 phi_real = 0.1
 theta_true = 1.0
 
 # run till convergence:
 for i in range(10):
     # Generate data for the MAP estimate of theta.
-    real_data = black_box(100000, theta_true, phi_real, i)
+    real_data = black_box(100, theta_true, phi_real, i)
     log_posterior = compute_log_posterior(thetas, phi_real, real_data, log_prior,i)
+    log_prior = np.copy(log_posterior)
 
     # XXX: There seems to be some floating-point issues here. Is there
     # anything that we can do about it?
@@ -144,7 +146,7 @@ for i in range(10):
     theta_map = thetas[np.argmax(log_posterior)]
 
     phi_eigs = []
-    phi_exp_log_posteriors = np.zeros((len(phis), len(thetas)))
+    #phi_exp_log_posteriors = np.zeros((len(phis), len(thetas)))
 
     for phi_ind, phi in enumerate(phis):
 
@@ -155,18 +157,18 @@ for i in range(10):
         for n in range(N_experiments):
 
             # Compute p(theta | D_fake, phi)
-            toy_data = black_box(10000, theta_map, phi)
-            log_posterior = compute_log_posterior(
-                thetas, phi_real, toy_data, log_prior,i,phi_ind,n)
-            curr_log_posterior.append(log_posterior)
-            curr_entropy = -np.sum(log_posterior * np.exp(log_posterior))
+            toy_data = black_box(100, theta_map, phi)
+            log_posterior_phi = compute_log_posterior(
+                thetas, phi, toy_data, log_prior,i,phi_ind,n)
+            curr_log_posterior.append(log_posterior_phi)
+            curr_entropy = -np.sum(log_posterior_phi * np.exp(log_posterior_phi))
             curr_eig += best_entropy - curr_entropy
 
-        phi_exp_log_posteriors[phi_ind] = np.mean(curr_log_posterior, axis=0)
+        #phi_exp_log_posteriors[phi_ind] = np.mean(curr_log_posterior, axis=0)
         phi_eigs.append(curr_eig / N_experiments)
 
     # Update phi and log-prior with the the best value of phi and the
     # log posterior.
     best_eig_ind = np.argmax(phi_eigs)
     phi_real = phis[best_eig_ind]
-    log_prior = phi_exp_log_posteriors[best_eig_ind]
+    
