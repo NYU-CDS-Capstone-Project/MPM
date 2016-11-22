@@ -125,7 +125,7 @@ N_experiments = 5
 phis = np.linspace(0, 3.14, 10) #np.array([0.09, 0.1, 0.11])
 
 # plausible parameter range.
-thetas = np.linspace(0.4, 1.6, 100)
+thetas = np.linspace(-3, 3, 1000)
 
 # Initialize a uniform prior on theta, a plausible theta true and phi value.
 log_prior = safe_ln(np.ones_like(thetas) / thetas.shape[0])
