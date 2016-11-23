@@ -1,4 +1,7 @@
 import numpy as np
+# Use following two lines when running on HPC:
+#import matplotlib
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 rng = np.random.RandomState(0)
