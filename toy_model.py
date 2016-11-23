@@ -1,8 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from scipy.stats import norm
-
 rng = np.random.RandomState(0)
 
 def safe_ln(x, minval=0.0000000001):
@@ -147,9 +145,17 @@ for i in range(10):
 
     # XXX: There seems to be some floating-point issues here. Is there
     # anything that we can do about it?
-    best_entropy = -np.sum(log_posterior * np.exp(log_posterior))
+    posterior = np.exp(log_posterior)
+    best_entropy = -np.sum(log_posterior * posterior)
     print(best_entropy)
-    theta_map = thetas[np.argmax(log_posterior)]
+    
+    theta_map = thetas[np.argmax(log_posterior)]                   
+
+    # alternative to argmax (instead we draw thetas from the posterior dist.)
+    # i.e., use theta_drawn_from_posterior instead of theta_map at line #172 (?)
+    posterior = posterior / np.sum(posterior)
+    idx_of_theta_drawn_from_posterior = np.random.choice(range(thetas.shape[0]), size=1, p=posterior)
+    theta_drawn_from_posterior = thetas[idx_of_theta_drawn_from_posterior][0]
 
     phi_eigs = []
     #phi_exp_log_posteriors = np.zeros((len(phis), len(thetas)))
