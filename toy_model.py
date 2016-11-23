@@ -186,6 +186,10 @@ for i in range(10):
     # log posterior.
     best_eig_ind = np.argmax(phi_eigs)
     phi_real = phis[best_eig_ind]
+    fName = "plots/%s/EIG_run%s.txt" % (str(i),str(i))
+    eigFile = open(fName,"w")
+    for item in phi_eigs:
+      eigFile.write("%s\n" % item)
 
     title_string = ("EIG(phi), max at %0.2f, run_iter: %s" %(best_eig_ind, i))
     plt.plot(phis, phi_eigs)
