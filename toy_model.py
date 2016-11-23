@@ -92,7 +92,7 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
 
     max_log_prior = max(log_prior)
     log_prior -= max_log_prior
-    prior = np.exp(max_log_prior)
+    prior = np.exp(log_prior)
     prior = prior / np.sum(prior)
 
     product = prior * likelihood
@@ -126,13 +126,13 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
     return log_posterior
 
 
-N_experiments = 5
+N_experiments = 2
 
 # plausible experimental settings.
 phis = np.linspace(0, 3.14, 10) #np.array([0.09, 0.1, 0.11])
 
 # plausible parameter range.
-thetas = np.linspace(-3, 3, 1000)
+thetas = np.linspace(-3, 3, 10)
 
 # Initialize a uniform prior on theta, a plausible theta true and phi value.
 log_prior = safe_ln(np.ones_like(thetas) / thetas.shape[0])
