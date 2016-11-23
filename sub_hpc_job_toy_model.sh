@@ -1,6 +1,6 @@
 #!/bin/bash
-#PBS -l nodes=1:ppn=6
-#PBS -l walltime=12:00:00
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=24:00:00
 #PBS -l mem=32GB
 #PBS -N toy_model
 #PBS -M mc3784@nyu.edu
