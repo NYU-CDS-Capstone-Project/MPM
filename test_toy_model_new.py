@@ -26,7 +26,7 @@ X_s = (bins + bin_width)[:-1]
 
 plt.clf()
 phis = np.array([0.1, 0.6])
-eigs, likelihoods, thetas = optimize_phi(phis, return_likelihoods=True)
+eigs, likelihoods, posteriors_phi, thetas = optimize_phi(phis, return_likelihoods=True)
 for phi_ind, phi in enumerate(phis):
     for theta in [0.8, 1.0, 1.2]:
         closest_ind = np.argmin(np.abs(thetas[phi_ind] - theta))
