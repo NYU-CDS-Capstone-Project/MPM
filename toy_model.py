@@ -1,6 +1,6 @@
 import numpy as np
-# Use following line when running on HPC:
-#iimport matplotlib
+# Use following two lines when running on HPC:
+#import matplotlib
 #matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
