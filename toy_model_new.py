@@ -69,7 +69,7 @@ def expected_information_gain(thetas, X, phi, prior=None, return_posteriors=Fals
     # Sum across thetas to get P(theta | X_i, phi)
     # Take average across X_i's to get expected information gain.
     entropies = np.sum(p_log_p, axis=0)
-    return np.mean(entropies)
+    return np.mean(entropies),posteriors
 
 
 def optimize_phi(phis, return_likelihoods=False):
@@ -85,6 +85,7 @@ def optimize_phi(phis, return_likelihoods=False):
 
     eigs = []
     likelihoods_phi = []
+    posteriors_phi = []
     thetas_phi = []
     for phi in phis:
         # Draw n_samples from P(X | phi)
@@ -120,9 +121,10 @@ def optimize_phi(phis, return_likelihoods=False):
         # Since the bins are now discretized, sample 10000 values from
         # a multinomial with probabilities P_X_given_phi.
         data = np.repeat(X_s, rng.multinomial(10000, P_X_given_phi, size=1)[0])
-        eig = expected_information_gain(thetas, data, phi)
+        eig, posterior= expected_information_gain(thetas, data, phi)
+        posteriors_phi.append(posterior)
         eigs.append(eig)
     best_phi = phis[np.argmax(eigs)]
     if return_likelihoods:
-        return eigs, np.array(likelihoods_phi), np.array(thetas_phi)
+        return eigs, np.array(likelihoods_phi), np.array(thetas_phi),np.array(posteriors_phi)
     return eigs
