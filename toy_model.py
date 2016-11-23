@@ -185,6 +185,7 @@ for i in range(10):
     phi_real = phis[best_eig_ind]
 
     title_string = ("EIG(phi), max at %0.2f, run_iter: %s" %(best_eig_ind, i))
+    plt.plot(phis, phi_eigs)
     plt.title(title_string)
     plt.xlabel("phi")
     plt.ylabel("avg(EIG)")
