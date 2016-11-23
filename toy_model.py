@@ -102,11 +102,11 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
     plt.plot(thetas, likelihood)
     best_like_theta = thetas[np.argmax(log_likelihoods)]
     title_string = (
-        "log_P(X|theta,phi=%0.2f), max at %0.2f, run_iter: %s, phi_iter: %s, exp_iter: %s" %
+        "P(X|theta,phi=%0.2f), max at %0.2f, run_iter: %s, phi_iter: %s, exp_iter: %s" %
         (phi, best_like_theta, str(run_iter), str(phi_iter), str(exp_iter)))
     plt.title(title_string)
     plt.xlabel("Thetas")
-    plt.ylabel("Log Likelihood")
+    plt.ylabel("Likelihood")
     fig_name = "plots/%s/%s/LL - Iteration, phi_iter: %s" %(str(run_iter),str(exp_iter),str(phi_iter))
     plt.savefig(str(fig_name))
     plt.clf()
@@ -114,11 +114,11 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
     plt.plot(thetas, posterior)
     best_pos_theta = thetas[np.argmax(log_posterior)]
     title_string = (
-        "log_P(theta | X, phi=%0.2f), max at %0.2f,run_iter: %s,exp_iter: %s" %
+        "P(theta | X, phi=%0.2f), max at %0.2f,run_iter: %s,exp_iter: %s" %
         (phi, best_pos_theta,str(run_iter),str(exp_iter)))
     plt.title(title_string)
     plt.xlabel("Thetas")
-    plt.ylabel("Log Posterior")
+    plt.ylabel("Posterior")
     fig_name = "plots/%s/%s/LP - Iteration, phi iter: %s" %(str(run_iter),str(exp_iter),str(phi_iter))
     plt.savefig(str(fig_name))
     plt.clf()
@@ -126,13 +126,13 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
     return log_posterior
 
 
-N_experiments = 2
+N_experiments = 5
 
 # plausible experimental settings.
 phis = np.linspace(0, 3.14, 10) #np.array([0.09, 0.1, 0.11])
 
 # plausible parameter range.
-thetas = np.linspace(-3, 3, 10)
+thetas = np.linspace(-3, 3, 1000)
 
 # Initialize a uniform prior on theta, a plausible theta true and phi value.
 log_prior = safe_ln(np.ones_like(thetas) / thetas.shape[0])
@@ -178,3 +178,13 @@ for i in range(10):
     # log posterior.
     best_eig_ind = np.argmax(phi_eigs)
     phi_real = phis[best_eig_ind]
+
+    title_string = ("EIG(phi), max at %0.2f, run_iter: %s" %(best_eig_ind, i))
+    plt.title(title_string)
+    plt.xlabel("phi")
+    plt.ylabel("avg(EIG)")
+    fig_name = "plots/%s/EIG_average" %(str(i))
+    plt.savefig(str(fig_name))
+    plt.clf()
+
+
