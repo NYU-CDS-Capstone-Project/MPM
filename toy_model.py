@@ -97,8 +97,8 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
 
     product = prior * likelihood
     posterior =  product / np.sum(product)
-    log_posterior = np.log(posterior)
-
+    #log_posterior = np.log(posterior)
+    log_posterior = safe_ln(posterior)
     plt.plot(thetas, likelihood)
     best_like_theta = thetas[np.argmax(log_likelihoods)]
     title_string = (
@@ -129,8 +129,8 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
 N_experiments = 5
 
 # plausible experimental settings.
-phis = np.linspace(0, 3.14, 10) #np.array([0.09, 0.1, 0.11])
-
+#phis = np.linspace(0, 3.14, 10) #np.array([0.09, 0.1, 0.11])
+phis = np.linspace(0, 2*np.pi, 10)
 # plausible parameter range.
 thetas = np.linspace(-3, 3, 1000)
 
@@ -140,7 +140,7 @@ phi_real = 0.1
 theta_true = 1.0
 
 # run till convergence:
-for i in range(10):
+for i in range(1):
     # Generate data for the MAP estimate of theta.
     real_data = black_box(100, theta_true, phi_real, i)
     log_posterior = compute_log_posterior(thetas, phi_real, real_data, log_prior,i)
@@ -188,8 +188,10 @@ for i in range(10):
     phi_real = phis[best_eig_ind]
     fName = "plots/%s/EIG_run%s.txt" % (str(i),str(i))
     eigFile = open(fName,"w")
+    print "writing EIG_run file"
     for item in phi_eigs:
       eigFile.write("%s\n" % item)
+    print phi_eigs
 
     title_string = ("EIG(phi), max at %0.2f, run_iter: %s" %(best_eig_ind, i))
     plt.plot(phis, phi_eigs)
