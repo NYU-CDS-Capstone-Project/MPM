@@ -140,7 +140,7 @@ phi_real = 0.1
 theta_true = 1.0
 
 # run till convergence:
-for i in range(1):
+for i in range(10):
     # Generate data for the MAP estimate of theta.
     real_data = black_box(100, theta_true, phi_real, i)
     log_posterior = compute_log_posterior(thetas, phi_real, real_data, log_prior,i)
