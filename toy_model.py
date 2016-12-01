@@ -1,9 +1,9 @@
 import numpy as np
 # Use following two lines when running on HPC:
-#import matplotlib
-#matplotlib.use('Agg')
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-
+from createDirStructure import mkdir_all 
 rng = np.random.RandomState(0)
 
 def safe_ln(x, minval=0.0000000001):
@@ -41,7 +41,7 @@ def log_likelihood(X, theta, phi):
     """
     # Generate samples to estimate the empirical distribution.
     samples = black_box(10**6, theta, phi)
-    n, bins = np.histogram(samples, 1000, density=True)
+    n, bins = np.histogram(samples, 500, density=True)
     bin_indices = np.searchsorted(bins, X) - 1
 
     # Clip values outside the interval.
@@ -107,7 +107,7 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
     plt.title(title_string)
     plt.xlabel("Thetas")
     plt.ylabel("Likelihood")
-    fig_name = "plots/%s/%s/LL - Iteration, phi_iter: %s" %(str(run_iter),str(exp_iter),str(phi_iter))
+    fig_name = "plots/n_iter%s/exp_exp_%s/LL - Iteration, phi_iter: %s" %(str(run_iter),str(exp_iter),str(phi_iter))
     plt.savefig(str(fig_name))
     plt.clf()
 
@@ -119,14 +119,14 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
     plt.title(title_string)
     plt.xlabel("Thetas")
     plt.ylabel("Posterior")
-    fig_name = "plots/%s/%s/LP - Iteration, phi iter: %s" %(str(run_iter),str(exp_iter),str(phi_iter))
+    fig_name = "plots/n_iter%s/exp_exp_%s/LP - Iteration, phi iter: %s" %(str(run_iter),str(exp_iter),str(phi_iter))
     plt.savefig(str(fig_name))
     plt.clf()
 
     return log_posterior
 
 
-N_experiments = 5
+N_experiments = 20
 
 # plausible experimental settings.
 #phis = np.linspace(0, 3.14, 10) #np.array([0.09, 0.1, 0.11])
@@ -138,7 +138,8 @@ thetas = np.linspace(-3, 3, 1000)
 log_prior = safe_ln(np.ones_like(thetas) / thetas.shape[0])
 phi_real = 0.1
 theta_true = 1.0
-
+n_iter = 10
+mkdir_all("plots",n_iter,N_experiments)
 # run till convergence:
 for i in range(10):
     # Generate data for the MAP estimate of theta.
@@ -186,7 +187,7 @@ for i in range(10):
     # log posterior.
     best_eig_ind = np.argmax(phi_eigs)
     phi_real = phis[best_eig_ind]
-    fName = "plots/%s/EIG_run%s.txt" % (str(i),str(i))
+    fName = "plots/n_iter%s/EIG_run%s.txt" % (str(i),str(i))
     eigFile = open(fName,"w")
     print "writing EIG_run file"
     for item in phi_eigs:
@@ -198,7 +199,7 @@ for i in range(10):
     plt.title(title_string)
     plt.xlabel("phi")
     plt.ylabel("avg(EIG)")
-    fig_name = "plots/%s/EIG_average" %(str(i))
+    fig_name = "plots/n_iter%s/EIG_average" %(str(i))
     plt.savefig(str(fig_name))
     plt.clf()
 
