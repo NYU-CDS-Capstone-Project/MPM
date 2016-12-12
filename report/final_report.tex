@@ -68,6 +68,7 @@
 %
 \documentclass[10pt,journal,compsoc]{IEEEtran}
 \usepackage{hyperref}
+\usepackage{color,graphicx}
 % If IEEEtran.cls has not been installed into the LaTeX system files,
 % manually specify the path to it like:
 % \documentclass[10pt,journal,compsoc]{../sty/IEEEtran}
@@ -849,6 +850,73 @@ the experiment simulator to the cloud.
 % footnotes above bottom floats. This can be corrected via the
 % \fnbelowfloat command of the stfloats package.
 
+\section{Bayesian motivation}
+We indicate with $x$ the data that is the output of the experiment. This output depends on $\theta$ (that represent a constant of nature) and $\Phi$ (that represent the setting to the experiment). We call $P(x|\theta,\Phi)$ the probability distribution of the data given $\theta$ and $\Phi$.\\
+The information gain for this distribution is defined as: 
+\begin{equation}\label{infGain}
+EIG(\Phi) =\int P(x|\Phi)\Big[ H[P(\theta)]-H[P(\theta|x,\Phi)]\Big]dx
+\end{equation}
+where we indicated with $H$ the entropy, that for a discrete distribution is defined as:
+\begin{equation}
+%H[P(\theta)]=-\int_{-\infty}^{\infty}p(\theta)\log p(\theta) d\theta
+H[P]=-\sum_{k\geq 1}p_k \log{p_k}
+\end{equation}
+To compute that we need to sample from $ P(x|\Phi)$ and know $P(\theta|x,\Phi)$.
+\begin{itemize}
+\item We don't have $P(x|\Phi)$ because the data of the experiment is conditioned on $\theta$ as well, consequently we can only sample from the distribution $P(x |\theta,\Phi)$. But we can calculate it using the following:
+\begin{equation}
+P(x|\Phi) = \int P(x,\theta | \Phi)d \theta = 
+\int P(x| \theta , \Phi) P(\theta | \Phi)d \theta 
+%= E[P(x| \theta , \Phi)]
+\end{equation}
+Where the last equality is the expected value of $P(x| \theta , \Phi)$ under the distribution $P(\theta | \Phi)$.
+Discretising the integral:
+\begin{equation}
+P(x|\Phi) = \sum_{i=1}^{n}  P(x |\theta_i,\Phi)P(\theta_i | \Phi) = \frac{1}{n} \sum_{i=1}^{n}  P(x |\theta_i,\Phi) 
+\end{equation}
+Where in the last equality we are assuming to have an uniform distribution $P(\theta_i | \Phi) =1/n$.
+We use the black box to generate the distributions $P(x |\theta_i,\Phi) $ for $n$ values of $\theta$:
+\begin{equation}
+\begin{array}{ll}
+\theta_1 \rightarrow P(x |\theta_1,\Phi)\\
+\theta_2 \rightarrow P(x |\theta_2,\Phi)\\
+\dots\\
+\theta_n \rightarrow P(x |\theta_n,\Phi)\\
+\end{array}
+\end{equation}
+each of these distribution is obtained from a histogram of the sampled data.
+Using these we can compute $P(x|\Phi)$. \\
+
+Since $P(x | \Phi)$ is now discretized because of the histogram, we sample from a multinomial with the parameters, $x_i$'s given by the bin centers and the probability computed from the normalized histogram.
+
+This is done from lines 92 to 107 in the code.
+
+\item To calculate the posterior $P(\theta|x_j,\Phi)$ where $x_j$ is sampled using the method described above, we can use Bayes theorem:
+\begin{equation}
+P(\theta|x_j,\Phi)=\frac{P(x_j|\theta,\Phi)P(\theta|\Phi)}{P(x_j|\Phi)}
+\end{equation}
+
+\item After doing this, we average out $-H[P(\theta|x_j ,\Phi)]$ across all $x_j$'s to calculate the Expected Information Gain.
+\end{itemize}
+
+
+\section{Toy model implementation}
+\subsection{Program structure}
+Same description of the toy model code with reference to the flowchart in Fig. \ref{fig:flowchart}.
+\begin{figure}[ht!]
+ \centering
+  \includegraphics[width=0.5\textwidth]{images/flowchart.png}
+  \caption{\label{fig:flowchart} Flowchart of the program}
+\end{figure}
+\subsection{Results}
+Same description of the results
+\begin{figure}[ht!]
+ \centering
+  \includegraphics[width=0.4\textwidth]{images/EIG_average.png}
+  \caption{\label{fig:EIGPlot} Expected Information Gain}
+\end{figure}
+ 
+\section{Application to Physics Data}
 
 
 
