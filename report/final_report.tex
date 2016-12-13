@@ -1,4 +1,3 @@
-
 %% bare_adv.tex
 %% V1.4b
 %% 2015/08/26
@@ -68,6 +67,9 @@
 %
 \documentclass[10pt,journal,compsoc]{IEEEtran}
 \usepackage{hyperref}
+\usepackage{amsopn}
+\usepackage[ruled]{algorithm2e}
+
 \usepackage{color,graphicx}
 % If IEEEtran.cls has not been installed into the LaTeX system files,
 % manually specify the path to it like:
@@ -521,6 +523,7 @@ pdfkeywords={Computer Society, IEEEtran, journal, LaTeX, paper,
 % correct bad hyphenation here
 \hyphenation{op-tical net-works semi-conduc-tor}
 
+\DeclareMathOperator*{\argmin}{arg\,min}
 
 \begin{document}
 %
@@ -628,7 +631,7 @@ pdfkeywords={Computer Society, IEEEtran, journal, LaTeX, paper,
 % in the abstract or keywords.
 \IEEEtitleabstractindextext{%
 \begin{abstract}
-The abstract goes here.
+We integrate the necessary components and demonstrate a proof-of-concept for a "robot physicist" that is able to plan the next experiment needed to most efficiently measure a fundamental constant of nature. We then apply the algorithm to simulated data.
 \end{abstract}
 
 % Note that keywords are not normally used for peerreview papers.
@@ -697,62 +700,101 @@ The abstract goes here.
 % 
 % Here we have the typical use of a "T" for an initial drop letter
 % and "HIS" in caps to complete the first word.
-\IEEEPARstart{P}{article} physics experiments generally require expensive shared equipment, or time
-consuming simulations. Therefore, optimizing the experiment simulation procedure to minimize
-the time required to achieve results is a subject of importance to physicists. The aim of our
-project is to use data science techniques to reduce resources used in the experimental process.
-The experimental model has three components:
-\begin{enumerate}
-\item Experimental configurations such as the energy required to run the particular experiment
-(phi)
-\item Quantities that we would like to infer from the experiment (theta), for instance, we may
-want to estimate the Weinberg angle (a fundamental parameter of the Standard Model of
-particle physics).
-\item  Data generated from the experiment (X)
-\end{enumerate}
+\IEEEPARstart{P}{article} physics experiments generally seek to estimate fundamental constants of nature. These constants can be measured with varying levels of uncertainty, depending on the choice of experimental parameters. Our project is designed to demonstrate a proof-of-concept for automating the identification of the experimental parameters which minimize the uncertainty associated with measurement of the quantity of interest in the experiment. This proof of concept can be extended to real physics simulations.
 
-The aim of our project is to estimate the underlying data generating distribution from simulations
-which we?ll use to predict the settings of the experiment that allow us to obtain theta with high
-confidence. If we can predict these settings, we can reduce the number of experiments we?d
-need to run.
+This "robot physicist" system can be understood using the simple analogy of two experimenters, Alice and Bob. Alice runs experiments which generate data, and she uses the data to update her prior on the distribution of the natural constant of interest. Bob uses the posterior from Alice's experiment to run a set of simulated experiments with various possible experimental settings, and he identifies the experimental settings that maximize the expected information gain. Bob then hands the best experimental settings back to Alice, and Alice repeats the process.
+
+\subsection{Notation}
+The experimental model has three main components: 
+\begin{enumerate}
+\item $\phi$ : Experimental configurations such as the energy required to run the particular experiment.
+\item $\theta$: Quantities that we would like to infer from the experiment
+\item $X$: Data generated from the experiment
+\end{enumerate}
 
 %\hfill mds
 % 
 %\hfill August 26, 2015
 
-\subsection{Toy data}
-As a starting point we would estimate theta and phi on toy problems where we know the ground
-truth of the data generating distribution. For example, X can follow a gaussian distribution with
-mean theta and variance phi. For this toy data we will take the following steps:
+\section{Proof-of-Concept Model}
+
+\subsection{Black-box}
+For our proof-of-concept we use a black-box simulator which generates data, $X$, such that $X$ follows a univariate Gaussian distribution with mean $\theta$ and variance $2 + \cos(\phi)$. This proof-of-concept would hold for any black box, but  this configuration was chosen for convenience, as $\phi$ is unconstrained, and variance is always non-negative. This black-box serves three purposes.
 \begin{enumerate}
-\item For the toy-data generating distribution we would generate a number of samples for a
-fixed value of theta and phi
-\item  We would then estimate $P(X | \theta, \phi)$. For a simple distribution, we could use a
-histogram to approximate this using evenly-spaced grids.
-\item The third step would be to infer $P(\theta | X, \phi)$ from $P(X | \theta, \phi)$ using Bayes
-theorem:
-$$
-P(\theta | X, \phi) = P(X | \theta,\phi) P(\theta | \phi) / P(X | \phi).
-$$
-We would also fix the prior P(theta | phi) to some simple distribution and not infer this
-from data.
-\item Run loops from 1-3 for different values of phi such that the information gain in P(theta |
-X, phi) is maximized. As a possible extension of our project, we may perform bayesian
-optimization to choose the next value phi intelligently given previous evaluations.
+\item purpose 1 
+\item purpose 2
+\item purpose 3
 \end{enumerate}
 
-% needed in second column of first page if using \IEEEpubid
-%\IEEEpubidadjcol
+\subsection{Algorithm}
+\begin{algorithm}
+ \KwResult{estimate $\theta_{true}$ and $\phi_{real}$ }
+ initialize $\theta_{true}$, $\phi_{real}$ and $P(\theta)_{prior}$\;
+ \While{iter $<$ num iters }{
+	$P(\theta_{pos})$ = \texttt{gen\_theta\_posterior($\theta_{true}$, $\phi_{real}$, $P(\theta)_{prior}$)}\;
+    $P(\theta_{prior}) = P(\theta_{pos})$\;
+    $\phi_{real}$ = \texttt{optimize\_phi($\theta_{prior}$, $H(\theta)$)}\;
+ }
+\caption{Main algorithm}
 
-\subsection{Physics data}
-After we ha ve created the toy data pipeline, we?ll extend it for the actual simulated
-experiments provided by our project advisor (\url{https://github.com/lukasheinrich/higgs-mc-studies}).
-For the actual simulated experiments, the ground truth is not known, so we plan to make use of
-a liklihood-free inference toolbox (\url{https://github.com/diana-hep/carl}) to estimate $P(X | \theta, \phi)$.
-When we move from using the toy data to actual experimental data, and the computational load
-will increase significantly. Therefore, as discussed with our project advisor, we will look for
-opportunities to parallelize computations, and we will make use of AWS and docker to deploy
-the experiment simulator to the cloud.
+
+    \underline{function \texttt{gen\_theta\_posterior}} ($\theta$, $\phi$, $P(\theta)_{prior}$)\;
+    $X$ = \texttt{black\_box($\theta$, $\phi$)}\;
+    $P(X | \theta, \phi) $ = \texttt{likelihood(X, $\theta$, $\phi$)}\;
+    \Return \texttt{normalize($P(\theta)$ $\times$ $P(X | \theta, \phi) $}\;
+%    	\caption{Generate posterior distribution on theta}
+
+\
+
+	\underline{function \texttt{optimize\_phi}}($P(\theta)$, $H(\theta)$\;
+    \Return $\arg\max_\phi$ = $\int P(X|\Phi) (H[P(\theta)]-H[P(\theta|X,\Phi)])$ $\, dX$
+%     \caption{Optimize choice of Phi}
+\end{algorithm}
+
+\subsubsection{Generate a posterior distribution on theta}
+This step contains two notable processes:
+\begin{enumerate}
+\item Computing the likelihood of $X$ given $\theta$ and $\phi$:
+
+We generate an empirical pdf using a normalized histogram with samples generated from the black-box using $\theta$ and $\phi$.
+\item Finding an appropriate step size for $\theta $
+
+Given an lower- and upper-bound for theta (which should be available for most physical constants of interest), and, for convenience, using a univariate Gaussian distribution, $\sigma_{theta_{posterior}}$, which scales as $\frac{\sigma_{theta_{prior}}}{\sqrt{n}}$, with $n$ = the number of samples used to compute the likelihood.
+\end{enumerate}
+After calculating these components, the computation of the posterior is trivial.
+
+\subsubsection{Optimize phi}
+
+We use the following simplifications to optimize over $\phi$  in our toy model.
+
+\begin{enumerate}
+\item We use a greedy procedure in which we compute the information gain for a set of plausible $\phi$ 's (experimental settings) and we return the $\phi$ that maximizes the expected information gain.
+\item  For a fixed value of phi, we approximate $\int P(X|\Phi) (H[P(\theta)]-H[P(\theta|X,\Phi)])$ $\, dX$  with $H[P(\theta)] -    \frac{\sum_{i=1}^N H[P(\theta|X_i,     \Phi)])}{N}$  where $N$ is the number of times the experiment is carried out with the same experimental settings.
+\item To estimate the integrated expected information gain, we need to integrate $H[P(\theta|X,\Phi)]$  over $\theta$. We in-turn replace this integration with a point-estimate using the MAP estimate of P($\theta)$  \end{enumerate}
+
+
+\section{Improvements and Extensions}
+\subsection{Improvements to the toy model implementation}
+\subsubsection{Likelihood-free inference}
+Our toy model demonstrates the case where $X$ is a univariate gaussian. For multi-dimensional $X$ , we can replace the usage of histograms with likelihood-free inference techniques to compute $P(\theta | X, \phi)$ 
+
+\subsubsection{Bayesian optimization}
+Currently we optimize over $\phi$  by choosing a range of values with a fixed step size. The optimization over $\phi$ is a technique that very naturally fits into a bayesian optimization framework since the function that computes the expected information gain is a very expensive function that includes many simulator calls. 
+
+\subsubsection{Bobs choice of $\theta$} 
+Computing the expected information gain using the MAP estimate of $\theta$  could be replaced by computing the mean information gain by sampling from the posterior.
+
+
+\subsection{Extension to a real physics simulator}
+\subsubsection{Integrating a physics experiment simulator}
+We can connect our toy data pipeline to a real physics experiment simulation developed by Lukas Heinrich (\url{https://github.com/lukasheinrich/higgs-mc-studies}). The experiment takes has $\phi$ = (sqrtshalf, polbeam1, polbeam2), and it generates experimental data (events) as json.
+\subsubsection{Extension for Likelihood-free inference}
+For the actual simulated experiments, the ground truth is not known, and this proof of concept can be extended to make use of a likelihood-free inference toolbox (\url{https://github.com/diana-hep/carl}) to estimate $P(X | \theta, \phi)$ . 
+\subsubsection{Scaling the proof-of-concept to large experiments}
+\begin{enumerate}
+\item Caching: 
+\item Parallelism: 
+\end{enumerate}
 
 
 % An example of a floating figure using the graphicx package.
@@ -850,16 +892,20 @@ the experiment simulator to the cloud.
 % footnotes above bottom floats. This can be corrected via the
 % \fnbelowfloat command of the stfloats package.
 
+
 \section{Bayesian motivation}
-We indicate with $x$ the data that is the output of the experiment. This output depends on $\theta$ (that represent a constant of nature) and $\Phi$ (that represent the setting to the experiment). We call $P(x|\theta,\Phi)$ the probability distribution of the data given $\theta$ and $\Phi$.\\
-The information gain for this distribution is defined as: 
+We indicate with $x$ the data that is the output of the experiment. This output depends on $\theta$ (that represent a constant of nature) and $\Phi$ (that represent the setting to the experiment). We call $P(x|\theta,\Phi)$ the probability distribution of the data given $\theta$ and $\Phi$. Using Bayesian theory we can compute the posterior of $\theta$ given $x$ and $\Phi$ as follow:
+\begin{equation}
+P(\theta|x,\Phi)=\frac{P(x|\theta,\Phi)P(\theta|\Phi)}{P(x|\Phi)}
+\end{equation}
+When $\Phi$ varies this distribution changes and so does the uncerainty on the mesure of $\theta$. The goal is to find the value of $\phi$ that generate a distribution with the smallest possible uncerainty. To do that we define the information gain as a function of $\phi$ and than we find the value of $\phi$ that maximizes it. The information gain is definde as:
 \begin{equation}\label{infGain}
 EIG(\Phi) =\int P(x|\Phi)\Big[ H[P(\theta)]-H[P(\theta|x,\Phi)]\Big]dx
 \end{equation}
-where we indicated with $H$ the entropy, that for a discrete distribution is defined as:
+where we indicated with $H$ the entropy. We approximate it discretizing the distribution on $theta$, as:
 \begin{equation}
 %H[P(\theta)]=-\int_{-\infty}^{\infty}p(\theta)\log p(\theta) d\theta
-H[P]=-\sum_{k\geq 1}p_k \log{p_k}
+H[P]\simeq-\sum_{k\geq 1}p_k \log{p_k}
 \end{equation}
 To compute that we need to sample from $ P(x|\Phi)$ and know $P(\theta|x,\Phi)$.
 \begin{itemize}
@@ -872,7 +918,7 @@ P(x|\Phi) = \int P(x,\theta | \Phi)d \theta =
 Where the last equality is the expected value of $P(x| \theta , \Phi)$ under the distribution $P(\theta | \Phi)$.
 Discretising the integral:
 \begin{equation}
-P(x|\Phi) = \sum_{i=1}^{n}  P(x |\theta_i,\Phi)P(\theta_i | \Phi) = \frac{1}{n} \sum_{i=1}^{n}  P(x |\theta_i,\Phi) 
+P(x|\Phi) \simeq \sum_{i=1}^{n}  P(x |\theta_i,\Phi)P(\theta_i | \Phi) = \frac{1}{n} \sum_{i=1}^{n}  P(x |\theta_i,\Phi) 
 \end{equation}
 Where in the last equality we are assuming to have an uniform distribution $P(\theta_i | \Phi) =1/n$.
 We use the black box to generate the distributions $P(x |\theta_i,\Phi) $ for $n$ values of $\theta$:
@@ -900,32 +946,94 @@ P(\theta|x_j,\Phi)=\frac{P(x_j|\theta,\Phi)P(\theta|\Phi)}{P(x_j|\Phi)}
 \end{itemize}
 
 
-\section{Toy model implementation}
-\subsection{Program structure}
-Same description of the toy model code with reference to the flowchart in Fig. \ref{fig:flowchart}.
-\begin{figure}[ht!]
- \centering
-  \includegraphics[width=0.5\textwidth]{images/flowchart.png}
-  \caption{\label{fig:flowchart} Flowchart of the program}
+\section{results}
+\subsection{Toy model}
+We ran the toy model with $\theta_{true}=1.0$ and we scanned $\theta$ in the range from $-3$ to $3$ with $200$ steps. Then we loop over the possible values of $\phi$ in the range $\phi = 2+w$ with $w$ in $(0-2\pi)$. In the set of Figures from \ref{fig:LP0} to \ref{fig:LP5} we report the plots of the posterior for different value of $w$. 
+\begin{figure}
+\begin{minipage}[b]{0.5\linewidth}
+\centering
+\includegraphics[width=1\linewidth]{images/LP0.png} 
+\caption{\label{fig:LP0}$\phi=0$} 
+%\vspace{1ex}
+\end{minipage}%%
+\begin{minipage}[b]{0.5\linewidth}
+\centering
+\includegraphics[width=1\linewidth]{images/LP1.png} 
+\caption{\label{fig:LP1}$\phi=0.70$}
+%\vspace{1ex}
+\end{minipage} 
+\begin{minipage}[b]{0.5\linewidth}
+\centering
+\includegraphics[width=1\linewidth]{images/LP2.png} 
+\caption{\label{fig:LP2}$\phi=1.40$}
+%\vspace{1ex}
+\end{minipage}%% 
+\begin{minipage}[b]{0.5\linewidth}
+\centering
+\includegraphics[width=1\linewidth]{images/LP3.png} 
+\caption{\label{fig:LP3}$\phi=2.09$}
+%\vspace{1ex}
+\end{minipage} 
+\begin{minipage}[b]{0.5\linewidth}
+\centering
+\includegraphics[width=1\linewidth]{images/LP4.png} 
+\caption{\label{fig:LP4} $\phi=2.79$}
+%\vspace{1ex}
+\end{minipage} 		
+\begin{minipage}[b]{0.5\linewidth}
+\centering
+\includegraphics[width=1\linewidth]{images/LP5.png} 
+\caption{\label{fig:LP5}$\phi=3.49$}
+%\vspace{1ex}
+\end{minipage} 
+%\begin{minipage}[b]{0.5\linewidth}
+%\centering
+%\includegraphics[width=1\linewidth]{images/LP6.png} 
+%\caption{\label{fig:LP6}}
+%\vspace{1ex}
+%\end{minipage} 		
+%\begin{minipage}[b]{0.5\linewidth}
+%\centering
+%\includegraphics[width=1\linewidth]{images/LP7.png} 
+%\vspace{1ex}
+%\end{minipage} 
+%\begin{minipage}[b]{0.5\linewidth}
+%\centering
+%\includegraphics[width=1\linewidth]{images/LP8.png} 
+%\vspace{1ex}
+%\end{minipage} 
+%\begin{minipage}[b]{0.5\linewidth}
+%\centering
+%\includegraphics[width=1\linewidth]{images/LP9.png} 
+%\vspace{1ex}
+%\end{minipage} 
 \end{figure}
-\subsection{Results}
-Same description of the results
+The information gain is plotted in Figure \ref{fig:EIGPlot}. We notice that the posterior gets better (with less variance and with mean value closer to $\theta_{true}$) when $\phi$ approaches the value that correspond to the max information gain.  
+
 \begin{figure}[ht!]
  \centering
   \includegraphics[width=0.4\textwidth]{images/EIG_average.png}
   \caption{\label{fig:EIGPlot} Expected Information Gain}
 \end{figure}
+
+
+
+
+%Same description of the toy model code with reference to the flowchart in Fig. \ref{fig:flowchart}.
+\begin{figure}[ht!]
+ \centering
+  \includegraphics[width=0.5\textwidth]{images/flowchart.png}
+  \caption{\label{fig:flowchart} Flowchart of the program}
+\end{figure}
+%\subsection{Results}
+
+
+
  
-\section{Application to Physics Data}
-
-
+%\section{Application to Physics Data}
 
 \section{Conclusion}
-The conclusion goes here.
-
-
-
-
+We have designed a proof-of-concept for a robot physicist system which is capable of searching for the experimental settings which most effectively measure a quantity of interest. We demonstrated a working example of the system using toy data, we outlined next steps to improve the toy model, and proposed next steps for scaling the model to real physics simulations.
 
 % if have a single appendix:
 %\appendix[Proof of the Zonklar Equations]
@@ -942,15 +1050,19 @@ The conclusion goes here.
 %
 
 
-\appendices
-\section{Title}
-Appendix one text goes here.
+\appendix
+%Same description of the toy model code with reference to the flowchart in Fig. 
 
 % you can choose not to have a title for an appendix
 % if you want by leaving the argument blank
 \section{}
 Appendix two text goes here.
-
+\ref{fig:flowchart}.
+\begin{figure}[ht!]
+ \centering
+  \includegraphics[width=0.5\textwidth]{images/flowchart.png}
+  \caption{\label{fig:flowchart} Flowchart of the program}
+\end{figure}
 
 % use section* for acknowledgment
 \ifCLASSOPTIONcompsoc
@@ -960,9 +1072,7 @@ Appendix two text goes here.
   % regular IEEE prefers the singular form
   \section*{Acknowledgment}
 \fi
-
-
-The authors would like to thank...
+The authors would like to thank Professor Kyle Cranmer for his guidance on this project; Lukas Heinrich for making a physics simulator available to us; and Professor Claudio Silva and our classmates for providing helpful feedback during our project update presentations.
 
 
 % Can use something like this to put references on a page
@@ -998,9 +1108,8 @@ The authors would like to thank...
 \begin{thebibliography}{1}
 
 \bibitem{IEEEhowto:kopka}
-References go here 
-%H.~Kopka and P.~W. Daly, \emph{A Guide to {\LaTeX}}, 3rd~ed.\hskip 1em plus
- % 0.5em minus 0.4em\relax Harlow, England: Addison-Wesley, 1999.
+%Bayesian Data Analysis, Second Edition (Chapman & Hall/CRC Texts in Statistical Science) (29 July 2003) by Andrew Gelman, John B. Carlin, Hal S. Stern, Donald B. Rubin
+A.~Gelman, \emph{Bayesian Data Analysis}, 2nd~ed. Chapman \& Hall/CRC Texts in Statistical Science, 2003.
 
 \end{thebibliography}
 
