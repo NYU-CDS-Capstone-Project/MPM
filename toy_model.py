@@ -3,7 +3,9 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from createDirStructure import mkdir_all 
+from createDirStructure import mkdir_all
+from sklearn.externals.joblib import Parallel, delayed
+
 rng = np.random.RandomState(0)
 
 def safe_ln(x, minval=0.0000000001):
@@ -129,7 +131,6 @@ def compute_log_posterior(thetas, phi, X, log_prior, run_iter="init", phi_iter="
 N_experiments = 20
 
 # plausible experimental settings.
-#phis = np.linspace(0, 3.14, 10) #np.array([0.09, 0.1, 0.11])
 phis = np.linspace(0, 2*np.pi, 10)
 # plausible parameter range.
 thetas = np.linspace(-3, 3, 1000)
@@ -152,8 +153,8 @@ for i in range(10):
     posterior = np.exp(log_posterior)
     best_entropy = -np.sum(log_posterior * posterior)
     print(best_entropy)
-    
-    theta_map = thetas[np.argmax(log_posterior)]                   
+
+    theta_map = thetas[np.argmax(log_posterior)]
 
     # alternative to argmax (instead we draw thetas from the posterior dist.)
     # i.e., use theta_drawn_from_posterior instead of theta_map at line #172 (?)
@@ -162,26 +163,23 @@ for i in range(10):
     theta_drawn_from_posterior = thetas[idx_of_theta_drawn_from_posterior][0]
 
     phi_eigs = []
-    #phi_exp_log_posteriors = np.zeros((len(phis), len(thetas)))
 
     for phi_ind, phi in enumerate(phis):
 
-        curr_eig = 0.0
-        curr_log_posterior = []
-        # These experiments are to average out randomness in computing the
-        # information gain.
-        for n in range(N_experiments):
+        # Generate toy data outside the Parallel loop to not rely
+        # on random number generation in individual processes.
+        toy_data = np.reshape(
+            black_box(100*N_experiments, theta_map, phi),
+            (N_experiments, 100))
 
-            # Compute p(theta | D_fake, phi)
-            toy_data = black_box(100, theta_map, phi)
-            log_posterior_phi = compute_log_posterior(
-                thetas, phi, toy_data, log_prior,i,phi_ind,n)
-            curr_log_posterior.append(log_posterior_phi)
-            curr_entropy = -np.sum(log_posterior_phi * np.exp(log_posterior_phi))
-            curr_eig += best_entropy - curr_entropy
-
-        #phi_exp_log_posteriors[phi_ind] = np.mean(curr_log_posterior, axis=0)
-        phi_eigs.append(curr_eig / N_experiments)
+        jobs = (delayed(compute_log_posterior)(
+            thetas, phi, toy_data[n], log_prior, i, phi_ind, n)
+            for n in range(N_experiments))
+        log_posterior = np.array(Parallel(n_jobs=-1)(jobs))
+        curr_entropy = -np.sum(
+            log_posterior * np.exp(log_posterior), axis=1)
+        curr_eig = np.mean(curr_entropy - best_entropy)
+        phi_eigs.append(curr_eig)
 
     # Update phi and log-prior with the the best value of phi and the
     # log posterior.
@@ -189,10 +187,10 @@ for i in range(10):
     phi_real = phis[best_eig_ind]
     fName = "plots/n_iter%s/EIG_run%s.txt" % (str(i),str(i))
     eigFile = open(fName,"w")
-    print "writing EIG_run file"
+    print("writing EIG_run file")
     for item in phi_eigs:
       eigFile.write("%s\n" % item)
-    print phi_eigs
+    print(phi_eigs)
 
     title_string = ("EIG(phi), max at %0.2f, run_iter: %s" %(best_eig_ind, i))
     plt.plot(phis, phi_eigs)
@@ -202,5 +200,3 @@ for i in range(10):
     fig_name = "plots/n_iter%s/EIG_average" %(str(i))
     plt.savefig(str(fig_name))
     plt.clf()
-
-
