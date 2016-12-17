@@ -700,14 +700,14 @@ We integrate the necessary components and demonstrate a proof-of-concept for a "
 % 
 % Here we have the typical use of a "T" for an initial drop letter
 % and "HIS" in caps to complete the first word.
-\IEEEPARstart{P}{article} physics experiments generally seek to estimate fundamental constants of nature. Depending on the choice of experimental settings, these constants can be measured with varying levels of uncertainty. Our project is designed to demonstrate a proof-of-concept for automating the identification of the experimental settings which minimize uncertainty in the measurement of the quantity of interest in the experiment. This proof of concept can be extended to real physics simulations.
+\IEEEPARstart{P}{article} physics experiments generally seek to estimate fundamental constants of nature. Depending on the choice of experimental settings, these constants can be measured with varying levels of uncertainty. Physicists would like to measure these constants with a minimum of uncertainty. Our project is designed to demonstrate a proof-of-concept for automating the identification of the experimental settings which minimize uncertainty in the measurement of the quantity of interest in the experiment. This proof of concept can be extended to real physics simulations.
 
 This "robot physicist" system can be understood using the simple analogy of two experimenters, Alice and Bob. Alice runs experiments which generate data, and she uses the data to update her prior on the distribution of the natural constant of interest. Bob uses the posterior from Alice's experiment to run a set of simulated experiments with various possible experimental settings, and he identifies the experimental settings that maximize the expected information gain. Bob then hands the best experimental settings back to Alice, and Alice repeats the process.
 
 % In this paper we introduce some useful notation, we explain the design of the Robot Physicist system, we describe the toy system we built as well as a system that uses a real physics simulator, and we show...
 
 \subsection{Notation}
-The experimental model has three main components: 
+Three variables will be referenced frequently in this paper, so they bear special mention upfront:
 \begin{enumerate}
 \item $\phi$ : Experimental configurations such as the energy required to run the particular experiment.
 \item $\theta$: Quantities that we would like to infer from the experiment
@@ -725,7 +725,7 @@ P(\theta|x,\Phi)=\frac{P(x|\theta,\Phi)P(\theta|\Phi)}{P(x|\Phi)}
 \end{equation}
 As the experimenter varies $\Phi$, this distribution changes. The experimenter's goal is to find the value of $\phi$ that estimates $\theta$ with a minimum of uncertainty.
 
-To find the best $\phi$ we define the information gain as a function of $\phi$ and than we find the value of $\phi$ that maximizes it. The information gain is defined as:
+To find the best $\phi$ we define the expected information gain as a function of $\phi$, and then we find the value of $\phi$ that maximizes it. The expected information gain (EIG) is defined as:
 \begin{equation}\label{infGain}
 EIG(\Phi) =\int P(x|\Phi)\Big[ H[P(\theta)]-H[P(\theta|x,\Phi)]\Big]dx
 \end{equation}
@@ -734,7 +734,7 @@ where $H$ denotes entropy. We approximate the entropy by discretizing the distri
 %H[P(\theta)]=-\int_{-\infty}^{\infty}p(\theta)\log p(\theta) d\theta
 H[P]\simeq-\sum_{k\geq 1}p_k \log{p_k}
 \end{equation}
-To compute that we need to sample from $ P(x|\Phi)$ and know $P(\theta|x,\Phi)$.
+To compute this we need to sample from $ P(x|\Phi)$ and know $P(\theta|x,\Phi)$.
 \begin{itemize}
 \item We don't have $P(x|\Phi)$ because the data of the experiment is conditioned on $\theta$ as well, consequently we can only sample from the distribution $P(x |\theta,\Phi)$. But we can calculate it using the following:
 \begin{equation}
@@ -749,14 +749,14 @@ P(x|\Phi) \simeq \sum_{i=1}^{n}  P(x |\theta_i,\Phi)P(\theta_i | \Phi) = \frac{1
 \end{equation}
 Where in the last equality we are assuming to have an uniform distribution $P(\theta_i | \Phi) =1/n$.
 We use the black box to generate the distributions $P(x |\theta_i,\Phi) $ for $n$ values of $\theta$:
-\begin{equation}
-\begin{array}{ll}
-\theta_1 \rightarrow P(x |\theta_1,\Phi)\\
-\theta_2 \rightarrow P(x |\theta_2,\Phi)\\
-\dots\\
-\theta_n \rightarrow P(x |\theta_n,\Phi)\\
-\end{array}
-\end{equation}
+% \begin{equation}
+% \begin{array}{ll}
+% \theta_1 \rightarrow P(x |\theta_1,\Phi)\\
+% \theta_2 \rightarrow P(x |\theta_2,\Phi)\\
+% \dots\\
+% \theta_n \rightarrow P(x |\theta_n,\Phi)\\
+% \end{array}
+% \end{equation}
 each of these distribution is obtained from a histogram of the sampled data.
 Using these we can compute $P(x|\Phi)$. \\
 
@@ -785,7 +785,9 @@ P(\theta|x_j,\Phi)=\frac{P(x_j|\theta,\Phi)P(\theta|\Phi)}{P(x_j|\Phi)}
 To demonstrate the Robot Physicist algorithm we define a black-box simulator which generates data, $X$, such that $X$ follows a univariate Gaussian distribution with mean $\theta$ and variance $2 + \cos(\phi)$. This proof-of-concept would hold for any black box, but  this configuration was chosen for convenience, as $\phi$ is unconstrained, and variance is always non-negative. 
 
 \subsection{Robot Physicist Algorithm}
+Here we outline the key algorithmic steps and functions
 \begin{algorithm}
+% \caption{Main algorithm}
  \KwResult{estimate $\theta_{true}$ and $\phi_{real}$ }
  initialize $\theta_{true}$, $\phi_{real}$ and $P(\theta)_{prior}$\;
  \While{iter $<$ num iters }{
@@ -793,8 +795,8 @@ To demonstrate the Robot Physicist algorithm we define a black-box simulator whi
     $P(\theta_{prior}) = P(\theta_{pos})$\;
     $\phi_{real}$ = \texttt{optimize\_phi($\theta_{prior}$, $H(\theta)$)}\;
  }
-\caption{Main algorithm}
 
+\
 
     \underline{function \texttt{gen\_theta\_posterior}} ($\theta$, $\phi$, $P(\theta)_{prior}$)\;
     $X$ = \texttt{black\_box($\theta$, $\phi$)}\;
@@ -808,6 +810,8 @@ To demonstrate the Robot Physicist algorithm we define a black-box simulator whi
     \Return $\arg\max_\phi$ = $\int P(X|\Phi) (H[P(\theta)]-H[P(\theta|X,\Phi)])$ $\, dX$
 %     \caption{Optimize choice of Phi}
 \end{algorithm}
+
+% In the following subsections the functions defined in the algorithm are discussed in greater detail. For full implementation details, see the project github repository.
 
 \subsubsection{Generate a posterior distribution on theta}
 This step contains two notable processes:
@@ -830,7 +834,7 @@ We use the following simplifications to optimize over $\phi$  in our toy model:
 \item To estimate the integrated expected information gain, we need to integrate $H[P(\theta|X,\Phi)]$  over $\theta$. We in-turn replace this integration with a point-estimate using the MAP estimate of P($\theta)$  \end{enumerate}
 
 \section{Extension to a Real Physics Simulator}
-We connected our data pipeline to a real physics experiment simulation provided by Lukas Heinrich (\url{https://github.com/lukasheinrich/higgs-mc-studies}). The experiment takes has $\phi$ = (sqrtshalf, polbeam1, polbeam2), and it generates experimental data (events) as json.
+We connected our data pipeline to a real physics experiment simulation provided by Lukas Heinrich (\url{https://github.com/lukasheinrich/higgs-mc-studies}). We scanned values of the first dimension of $\phi$, "sqrtshalf", and values of the simulator variable "Gf" (which is related to $\theta$) to generate data.
 
 There is substantial overhead associated with running a simulation on the real physics simulator. Generating 100 events takes 15 seconds, and generating 100K events take 100 seconds. To optimize the process, we run simulations in parallel and cache the results:
 
@@ -999,7 +1003,7 @@ In Figures \ref{fig:LP0} to \ref{fig:LP5} we plot the posterior of $\theta$ for 
 %\vspace{1ex}
 %\end{minipage} 
 \end{figure}
-The information gain is plotted in Figure \ref{fig:EIGPlot}. We notice that the posterior gets better (with less variance and with mean value closer to $\theta_{true}$) when $\phi$ approaches the value that correspond to the max information gain.  
+The information gain is plotted in Figure \ref{fig:EIGPlot}. We notice that the posterior gets better (with less variance and with mean value closer to $\theta_{true}$) when $\phi$ approaches the value that correspond to the max expected information gain.  
 
 \begin{figure}[ht!]
  \centering
@@ -1008,13 +1012,10 @@ The information gain is plotted in Figure \ref{fig:EIGPlot}. We notice that the 
 \end{figure}
 
 \subsection{Physics Experiment Results}
-[INSERT PHYSICS EXPERIMENT RESULTS]
-[INSERT PHYSICS EXPERIMENT RESULTS]
-[INSERT PHYSICS EXPERIMENT RESULTS]
-[INSERT PHYSICS EXPERIMENT RESULTS]
-[INSERT PHYSICS EXPERIMENT RESULTS]
-[INSERT PHYSICS EXPERIMENT RESULTS]
-\begin{figure}
+At the moment we don\'t have access to data from a real physics experiment, so we used data from the simulation to replace it. We ran the simulator with $Gf_{true}=1.166390e-{5}$ and $\phi_{real} = 45$ and we assumed the output of this simulation as the real physics experiment outcome (Alice's data). Than we use the simulator to generate data for $10$ values of $\phi$ in the range $(40-50)$, scanning $\theta$ in from $5.83195e-{6}$ to $1.749585e-{5}$ with $200$ steps (Bob's experiments). The number of loops we used for our model are N\_experiment$=20$ and n\_iter $= 10$. The posteriors we obtained are reported in the Figures from \ref{fig:LP0} to \ref{fig:LP9}, and the average information gain is plotted in Figure \ref{fig:EIGPhys}
+
+
+\begin{figure}[ht!]
 \begin{minipage}[b]{0.5\linewidth}
 \centering
 \includegraphics[width=1\linewidth]{PhysicsPlots/LP0.png} 
@@ -1077,7 +1078,6 @@ The information gain is plotted in Figure \ref{fig:EIGPlot}. We notice that the 
 \end{minipage} 
 \end{figure}
 
-
 \begin{figure}[ht!]
  \centering
   \includegraphics[width=0.4\textwidth]{PhysicsPlots/EIG_average.png}
@@ -1097,9 +1097,9 @@ The information gain is plotted in Figure \ref{fig:EIGPlot}. We notice that the 
 \subsection{Likelihood-free inference}
 Our toy model demonstrates the case where $X$ is a univariate gaussian. For multi-dimensional $X$ , we can replace the usage of histograms with likelihood-free inference techniques to compute $P(\theta | X, \phi)$ For the actual simulated experiments, the ground truth is not known, and this proof of concept can be extended to make use of a likelihood-free inference toolbox (\url{https://github.com/diana-hep/carl}) to estimate $P(X | \theta, \phi)$ .
 \subsection{Bayesian optimization}
-Currently we optimize over the experimental settings, $\phi$, by choosing a range of values with a fixed step size. The optimization over $\phi$ is a technique that very naturally fits into a bayesian optimization framework since the function that computes the expected information gain is a very expensive function that includes many simulator calls. 
-\subsection{Bob's choice of $\theta$} 
-Computing the expected information gain using the MAP estimate of $\theta$  could be replaced by computing the mean information gain by sampling from the posterior.
+Currently we optimize over the experimental settings, $\phi$, by choosing a range of values with a fixed step size. However, optimization over $\phi$ is a technique that very naturally fits into a Bayesian optimization framework because the function that computes the expected information gain is a very expensive function that includes many simulator calls. 
+\subsection{Bob\' s choice of $\theta$} 
+Currently we compute the expected information gain using the maximum a posteriori estimate of $\theta$. However, this could be replaced by computing the average information gain by sampling from the posterior distribution.
 
  
 %\section{Application to Physics Data}
